@@ -1,0 +1,5 @@
+request_id,message_id,voicemail_id,equipment_id,request_type,priority,safety_related,description,status,work_order_id,created_at,source_system,source_record_id,ingested_at
+REQ001,MSG001,,EQ001,BRAKE_ISSUE,HIGH,true,"Brake warning and reduced braking response",NEW,,2026-08-01T08:15:00Z,CASE_SYSTEM,REQ001,2026-08-01T08:20:00Z
+REQ002,MSG002,,EQ002,PM_REQUEST,MEDIUM,false,"Driver asks for PM service location",NEW,,2026-08-02T10:30:00Z,CASE_SYSTEM,REQ002,2026-08-02T10:35:00Z
+REQ003,,VM001,EQ001,BRAKE_ISSUE,CRITICAL,true,"Driver reports unsafe braking condition",ESCALATED,WO1001,2026-08-01T09:10:00Z,CASE_SYSTEM,REQ003,2026-08-01T09:15:00Z
+REQ004,,VM002,EQ002,PM_REQUEST,MEDIUM,false,"Driver requests PM appointment information",IN_PROGRESS,,2026-08-02T11:20:00Z,CASE_SYSTEM,REQ004,2026-08-02T11:25:00Z

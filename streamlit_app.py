@@ -2,25 +2,26 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 from app.phase2_data_quality import build_review_queue, reconcile_estimates_invoices
+from app.phase3_retrieval import load_chunks, retrieve
+from app.qwen_rag import MODEL_ID, ai_runtime_available, generate_answer
 
 ROOT = Path(__file__).resolve().parent
 PHASE1_DIR = ROOT / "data" / "phase1"
 PHASE2_DIR = ROOT / "data" / "phase2"
+KNOWLEDGE_DIR = ROOT / "data" / "phase3" / "knowledge"
 
 PHASE1_DATASETS = {"Equipment Master":"equipment_master.csv","PM Schedule":"pm_schedule.csv","Maintenance History":"maintenance_history.csv","Fault Events":"fault_events.csv","Work Orders":"work_orders.csv","Vendor Master":"vendor_master.csv","Service Locations":"service_locations.csv","Equipment Availability":"equipment_availability.csv","Campaigns / Recalls":"campaigns.csv","Compliance Inspections":"compliance_inspections.csv"}
 PHASE2_DATASETS = {"Communication Messages":"communication_messages.csv","Communication Participants":"communication_participants.csv","Voicemails":"voicemail_records.csv","Driver Requests":"driver_requests.csv","Vendor Estimates":"vendor_estimates.csv","Estimate Lines":"vendor_estimate_lines.csv","Vendor Invoices":"vendor_invoices.csv","Invoice Lines":"vendor_invoice_lines.csv","Repair Notes":"repair_notes.csv","Document Artifacts":"document_artifacts.csv","Human Review Tasks":"human_review_tasks.csv"}
 
 st.set_page_config(page_title="Fleet Maintenance AI Coordinator", page_icon="🚛", layout="wide")
 st.title("🚛 Fleet Maintenance AI Coordinator")
-st.caption("Data foundation → AI intelligence → human approval → operational action")
+st.caption("Data foundation → grounded AI intelligence → human approval → operational action")
 
 @st.cache_data
 def load_csv(directory, filename): return pd.read_csv(directory / filename)
 
 def load_group(directory, datasets): return {n: load_csv(directory, f) for n, f in datasets.items() if (directory / f).exists()}
-
-def safe_bool_count(df, col, value="true"):
-    return int(df[col].astype(str).str.lower().eq(value).sum()) if col in df else 0
+def safe_bool_count(df, col, value="true"): return int(df[col].astype(str).str.lower().eq(value).sum()) if col in df else 0
 
 def show_table(df, key, height=420):
     if df.empty: st.info("No data available for this view."); return
@@ -36,16 +37,15 @@ review_queue=build_review_queue(PHASE2_DIR); reconciliation=reconcile_estimates_
 
 st.sidebar.header("Navigation")
 section = st.sidebar.radio("Open", ["📊 Data Foundation", "🤖 AI Intelligence", "👤 Human Approval"], label_visibility="collapsed")
-st.sidebar.divider(); st.sidebar.caption("Current AI status")
-st.sidebar.info("AI engine: Not connected\n\nRAG: Not configured\n\nPrediction model: Not configured")
+st.sidebar.divider(); st.sidebar.caption("AI runtime")
+st.sidebar.info(f"Model: {MODEL_ID}\n\nLocal runtime: {'Available' if ai_runtime_available() else 'Not installed'}\n\nHuman approval: Required")
 
 if section == "📊 Data Foundation":
     st.header("📊 Data Foundation")
     st.caption("Trusted operational inputs, cleaning, validation, standardization and data quality.")
     tabs=st.tabs(["Fleet Overview","PM Management","Faults & Alerts","Work Orders & Repairs","Driver Requests","Vendor Management","Estimates & Invoices","Compliance & Campaigns","Data Quality"])
     with tabs[0]:
-        st.subheader("Fleet Overview"); c=st.columns(6); c[0].metric("Equipment",len(fleet)); c[1].metric("PM Records",len(pm)); c[2].metric("Fault Events",len(faults)); c[3].metric("Open Work Orders",int(work_orders.get("status",pd.Series(dtype=str)).astype(str).str.upper().eq("OPEN").sum())); c[4].metric("Driver Requests",len(requests)); c[5].metric("Review Items",len(review_queue))
-        a,b=st.columns(2)
+        st.subheader("Fleet Overview"); c=st.columns(6); c[0].metric("Equipment",len(fleet)); c[1].metric("PM Records",len(pm)); c[2].metric("Fault Events",len(faults)); c[3].metric("Open Work Orders",int(work_orders.get("status",pd.Series(dtype=str)).astype(str).str.upper().eq("OPEN").sum())); c[4].metric("Driver Requests",len(requests)); c[5].metric("Review Items",len(review_queue)); a,b=st.columns(2)
         with a:
             st.subheader("PM Status")
             if not pm.empty and "status" in pm: st.bar_chart(pm["status"].value_counts())
@@ -53,13 +53,9 @@ if section == "📊 Data Foundation":
             st.subheader("Fault Severity")
             if not faults.empty and "severity" in faults: st.bar_chart(faults["severity"].value_counts())
     with tabs[1]:
-        st.subheader("PM Management")
-        if not pm.empty:
-            c=st.columns(3); c[0].metric("Scheduled PM",len(pm)); c[1].metric("Due / Upcoming",int(pm.get("status",pd.Series(dtype=str)).astype(str).str.upper().isin(["DUE","UPCOMING","DUE_SOON"]).sum())); c[2].metric("Overdue",int(pm.get("status",pd.Series(dtype=str)).astype(str).str.upper().eq("OVERDUE").sum()))
-        show_table(pm,"pm_search")
+        st.subheader("PM Management"); c=st.columns(3); c[0].metric("Scheduled PM",len(pm)); c[1].metric("Due / Upcoming",int(pm.get("status",pd.Series(dtype=str)).astype(str).str.upper().isin(["DUE","UPCOMING","DUE_SOON"]).sum())); c[2].metric("Overdue",int(pm.get("status",pd.Series(dtype=str)).astype(str).str.upper().eq("OVERDUE").sum())); show_table(pm,"pm_search")
     with tabs[2]:
-        st.subheader("Faults & Alerts")
-        c=st.columns(4); c[0].metric("Total Faults",len(faults)); c[1].metric("Critical",int(faults.get("severity",pd.Series(dtype=str)).astype(str).str.upper().eq("CRITICAL").sum())); c[2].metric("High",int(faults.get("severity",pd.Series(dtype=str)).astype(str).str.upper().eq("HIGH").sum())); c[3].metric("Safety Related",safe_bool_count(faults,"safety_related")); show_table(faults,"fault_search")
+        st.subheader("Faults & Alerts"); c=st.columns(4); c[0].metric("Total Faults",len(faults)); c[1].metric("Critical",int(faults.get("severity",pd.Series(dtype=str)).astype(str).str.upper().eq("CRITICAL").sum())); c[2].metric("High",int(faults.get("severity",pd.Series(dtype=str)).astype(str).str.upper().eq("HIGH").sum())); c[3].metric("Safety Related",safe_bool_count(faults,"safety_related")); show_table(faults,"fault_search")
     with tabs[3]:
         st.subheader("Work Orders & Repairs"); c=st.columns(4); c[0].metric("Work Orders",len(work_orders)); c[1].metric("Open",int(work_orders.get("status",pd.Series(dtype=str)).astype(str).str.upper().eq("OPEN").sum())); c[2].metric("Repair Notes",len(repair_notes)); c[3].metric("Unavailable Fleet",int(availability.get("status",pd.Series(dtype=str)).astype(str).str.upper().ne("AVAILABLE").sum())); show_table(work_orders,"work_order_search"); st.subheader("Repair Notes"); show_table(repair_notes,"repair_note_search",300)
     with tabs[4]:
@@ -77,29 +73,44 @@ if section == "📊 Data Foundation":
 
 elif section == "🤖 AI Intelligence":
     st.header("🤖 AI Intelligence")
-    st.caption("AI capabilities are designed here first; model execution is intentionally disabled until the knowledge and governance foundations are ready.")
-    st.warning("AI Engine is not connected yet. The cards below are the production capability targets, not simulated AI decisions.")
-    ai_tabs=st.tabs(["Maintenance Recommendations","Communication Assistant","Repair Recommendations","Maintenance Scheduling","Predictive Risk"])
-    cards=[
+    ai_tabs=st.tabs(["Maintenance Knowledge Assistant","Maintenance Recommendations","Communication Assistant","Repair Recommendations","Maintenance Scheduling","Predictive Risk"])
+    with ai_tabs[0]:
+        st.subheader("Maintenance Knowledge Assistant")
+        st.caption("Grounded RAG prototype: retrieve approved knowledge first; Qwen answers only from retrieved evidence.")
+        question=st.text_area("Ask a maintenance question",placeholder="Example: What should be checked when a brake fault is reported?",height=100)
+        top_k=st.slider("Evidence documents",1,5,3)
+        if st.button("Retrieve and Analyze",type="primary"):
+            if not question.strip(): st.warning("Enter a maintenance question first.")
+            else:
+                chunks=load_chunks(KNOWLEDGE_DIR); results=retrieve(question,chunks,top_k=top_k)
+                if not results:
+                    st.error("No approved knowledge evidence was retrieved. No recommendation should be made.")
+                else:
+                    st.success(f"Retrieved {len(results)} approved evidence items.")
+                    evidence=[]
+                    for i,r in enumerate(results,1):
+                        c=r["chunk"]; label=f"[{i}] {c.document_id} — {c.title} — authority={c.authority} — score={r['score']}"; evidence.append(label+"\n"+c.text); st.markdown(f"**{label}**"); st.write(c.text)
+                    if ai_runtime_available():
+                        with st.spinner("Generating grounded answer with Qwen 2.5 3B..."):
+                            try: st.subheader("Grounded AI Answer"); st.write(generate_answer(question,evidence))
+                            except Exception as exc: st.error(f"AI generation failed safely: {exc}")
+                    else:
+                        st.info("Qwen runtime is not installed in this environment. Retrieval is working; install requirements-ai.txt to enable local generation.")
+                    st.warning("Human approval is required before any maintenance, repair, financial or return-to-service action.")
+    descriptions=[
         ("Maintenance Recommendations","Use PM history, faults, equipment condition, maintenance history and OEM guidance to recommend the next maintenance action."),
         ("Communication Assistant","Classify driver emails and voicemail, identify safety/compliance priority, summarize the request and draft a response for human approval."),
         ("Repair Recommendations","Combine fault codes, maintenance history, repair notes, OEM knowledge and vendor information to suggest diagnostic and repair options."),
         ("Maintenance Scheduling","Combine due dates, equipment availability, vendor preferences, service capacity and operational constraints to recommend a low-disruption schedule."),
         ("Predictive Risk","Estimate equipment failure risk from maintenance history, fault patterns, telemetry and operational signals, with explainable risk factors."),
     ]
-    for tab,(title,desc) in zip(ai_tabs,cards):
+    for tab,(title,desc) in zip(ai_tabs[1:],descriptions):
         with tab:
-            st.subheader(title); st.write(desc); a,b,c=st.columns(3); a.metric("Status","Not Connected"); b.metric("Model","Not Configured"); c.metric("Human Approval","Required")
-            st.info("No AI recommendation is generated from this screen yet. This prevents synthetic/demo data from being presented as a real operational decision.")
-            st.markdown("**Planned flow**"); st.code("Trusted Data → AI/ML → Recommendation → Confidence & Evidence → Human Approval → Action",language="text")
+            st.subheader(title); st.write(desc); a,b,c=st.columns(3); a.metric("Status","Foundation Ready"); b.metric("Model","Qwen 2.5 3B"); c.metric("Human Approval","Required"); st.info("This capability will consume the validated data + RAG evidence. No autonomous operational decision is enabled.")
 
 else:
-    st.header("👤 Human Approval")
-    st.caption("Safety, compliance, financial and operational decisions remain under human control.")
+    st.header("👤 Human Approval"); st.caption("Safety, compliance, financial and operational decisions remain under human control.")
     if review_queue.empty: st.success("No review items currently require attention.")
-    else:
-        st.metric("Items Requiring Review",len(review_queue)); show_table(review_queue,"approval_search",500)
-        st.info("Approval actions are intentionally read-only until workflow authorization and audit controls are implemented.")
+    else: st.metric("Items Requiring Review",len(review_queue)); show_table(review_queue,"approval_search",500); st.info("Approval actions are intentionally read-only until workflow authorization and audit controls are implemented.")
 
-st.divider()
-st.caption("Fleet Maintenance AI Coordinator • Read-only demonstration • AI recommendations, automated approvals and return-to-service decisions are disabled until governed AI workflows are implemented.")
+st.divider(); st.caption("Fleet Maintenance AI Coordinator • Grounded AI prototype • Recommendations require human approval.")

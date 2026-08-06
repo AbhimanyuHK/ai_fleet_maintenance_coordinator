@@ -7,6 +7,7 @@ from app.maintenance_recommendations import recommend
 from app.communication_assistant import assess
 from app.repair_recommendations_ui import render_repair_recommendations
 from app.maintenance_scheduling_ui import render_maintenance_scheduling
+from app.predictive_risk import RiskContext, assess_risk
 from app.qwen_rag import MODEL_ID, ai_runtime_available, generate_answer
 
 ROOT = Path(__file__).resolve().parent
@@ -84,7 +85,19 @@ elif section=="🤖 AI Intelligence":
     with tabs[3]: render_repair_recommendations(faults,history,estimates,repair_notes,KNOWLEDGE)
     with tabs[4]: render_maintenance_scheduling(pm,availability,locations,KNOWLEDGE)
     with tabs[5]:
-        st.subheader("Predictive Risk"); st.write("Estimate failure risk from maintenance history, fault patterns, telemetry and operational signals with explainable factors."); c=st.columns(3); c[0].metric("Status","Foundation Ready"); c[1].metric("Model","Qwen 2.5 3B"); c[2].metric("Human Approval","Required"); st.info("Predictive risk is the next Phase 3 capability. It will consume validated operational data + RAG evidence. No autonomous operational decision is enabled.")
+        st.subheader("Predictive Risk")
+        st.caption("Explainable risk assessment from validated fleet signals. This is a decision-support foundation, not a trained failure-probability model.")
+        if fleet.empty: st.info("No equipment data available.")
+        else:
+            eq_col="equipment_id" if "equipment_id" in fleet.columns else fleet.columns[0]
+            equipment_ids=fleet[eq_col].astype(str).tolist(); equipment_id=st.selectbox("Equipment",equipment_ids,key="risk_equipment")
+            def rows_for(df): return df[df[eq_col].astype(str).eq(equipment_id)] if eq_col in df.columns else pd.DataFrame()
+            f=rows_for(faults); h=rows_for(history); w=rows_for(work_orders); a=rows_for(availability); p=rows_for(pm); r=rows_for(requests)
+            def nmatch(df,col,values): return int(df[col].astype(str).str.upper().isin(values).sum()) if col in df else 0
+            critical=nmatch(f,"severity",{"CRITICAL"}); high=nmatch(f,"severity",{"HIGH"}); safety=nmatch(f,"safety_related",{"TRUE","YES","1"}) + nmatch(r,"safety_related",{"TRUE","YES","1"}); open_wo=nmatch(w,"status",{"OPEN","IN_PROGRESS"}); recent_repairs=len(h); unavailable=bool(not a.empty and "status" in a.columns and str(a.iloc[-1]["status"]).upper() != "AVAILABLE"); overdue=nmatch(p,"status",{"OVERDUE"}) > 0
+            c=st.columns(7); c[0].metric("Critical Faults",critical); c[1].metric("High Faults",high); c[2].metric("Safety Events",safety); c[3].metric("Open WOs",open_wo); c[4].metric("Recent Repairs",recent_repairs); c[5].metric("Overdue PM","YES" if overdue else "NO"); c[6].metric("Unavailable","YES" if unavailable else "NO")
+            if st.button("Assess Predictive Risk",type="primary",key="predictive_risk_assess"):
+                result=assess_risk(RiskContext(equipment_id,critical,high,safety,open_wo,overdue,recent_repairs,unavailable),load_chunks(KNOWLEDGE)); c=st.columns(4); c[0].metric("Risk Score",result.score); c[1].metric("Risk Level",result.level); c[2].metric("Evidence",len(result.evidence)); c[3].metric("Approval","Required"); st.subheader("Risk Factors"); [st.write(f"• {x}") for x in result.factors]; st.subheader("Recommended Action"); st.write(result.recommendation); st.subheader("Evidence Sources"); [st.write(f"• {x}") for x in result.evidence] if result.evidence else st.info("No approved evidence retrieved; escalate for human review."); st.warning("Risk assessment is advisory. It does not automatically ground equipment, stop service, authorize repair, or change a schedule.")
 else:
     st.header("👤 Human Approval")
     if review_queue.empty: st.success("No review items currently require attention.")

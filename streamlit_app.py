@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 from app.phase2_data_quality import build_review_queue, reconcile_estimates_invoices
 from app.phase3_retrieval import load_chunks, retrieve
+from app.maintenance_recommendations import recommend
 from app.qwen_rag import MODEL_ID, ai_runtime_available, generate_answer
 
 ROOT = Path(__file__).resolve().parent
@@ -19,10 +20,8 @@ st.caption("Data foundation → grounded AI intelligence → human approval → 
 
 @st.cache_data
 def load_csv(directory, filename): return pd.read_csv(directory / filename)
-
 def load_group(directory, datasets): return {n: load_csv(directory, f) for n, f in datasets.items() if (directory / f).exists()}
 def safe_bool_count(df, col, value="true"): return int(df[col].astype(str).str.lower().eq(value).sum()) if col in df else 0
-
 def show_table(df, key, height=420):
     if df.empty: st.info("No data available for this view."); return
     query = st.text_input("Search", key=key, placeholder="Search records...")
@@ -42,7 +41,6 @@ st.sidebar.info(f"Model: {MODEL_ID}\n\nLocal runtime: {'Available' if ai_runtime
 
 if section == "📊 Data Foundation":
     st.header("📊 Data Foundation")
-    st.caption("Trusted operational inputs, cleaning, validation, standardization and data quality.")
     tabs=st.tabs(["Fleet Overview","PM Management","Faults & Alerts","Work Orders & Repairs","Driver Requests","Vendor Management","Estimates & Invoices","Compliance & Campaigns","Data Quality"])
     with tabs[0]:
         st.subheader("Fleet Overview"); c=st.columns(6); c[0].metric("Equipment",len(fleet)); c[1].metric("PM Records",len(pm)); c[2].metric("Fault Events",len(faults)); c[3].metric("Open Work Orders",int(work_orders.get("status",pd.Series(dtype=str)).astype(str).str.upper().eq("OPEN").sum())); c[4].metric("Driver Requests",len(requests)); c[5].metric("Review Items",len(review_queue)); a,b=st.columns(2)
@@ -67,7 +65,7 @@ if section == "📊 Data Foundation":
     with tabs[7]:
         st.subheader("Compliance & Campaigns"); c=st.columns(3); c[0].metric("Inspections",len(compliance)); c[1].metric("Campaigns / Recalls",len(campaigns)); c[2].metric("Compliance Records",len(compliance)); st.subheader("Campaigns / Recalls"); show_table(campaigns,"campaign_search"); st.subheader("Compliance Inspections"); show_table(compliance,"compliance_search",350)
     with tabs[8]:
-        st.subheader("Data Quality"); st.caption("Operational data health across all current input datasets."); rows=[]
+        st.subheader("Data Quality"); rows=[]
         for name,df in {**p1,**p2}.items(): rows.append({"Dataset":name,"Rows":len(df),"Columns":len(df.columns),"Missing Cells":int(df.isna().sum().sum())})
         st.dataframe(pd.DataFrame(rows),use_container_width=True,hide_index=True); st.subheader("Human Review Queue"); show_table(review_queue,"review_search",350)
 
@@ -76,38 +74,48 @@ elif section == "🤖 AI Intelligence":
     ai_tabs=st.tabs(["Maintenance Knowledge Assistant","Maintenance Recommendations","Communication Assistant","Repair Recommendations","Maintenance Scheduling","Predictive Risk"])
     with ai_tabs[0]:
         st.subheader("Maintenance Knowledge Assistant")
-        st.caption("Grounded RAG prototype: retrieve approved knowledge first; Qwen answers only from retrieved evidence.")
         question=st.text_area("Ask a maintenance question",placeholder="Example: What should be checked when a brake fault is reported?",height=100)
         top_k=st.slider("Evidence documents",1,5,3)
         if st.button("Retrieve and Analyze",type="primary"):
             if not question.strip(): st.warning("Enter a maintenance question first.")
             else:
                 chunks=load_chunks(KNOWLEDGE_DIR); results=retrieve(question,chunks,top_k=top_k)
-                if not results:
-                    st.error("No approved knowledge evidence was retrieved. No recommendation should be made.")
+                if not results: st.error("No approved knowledge evidence was retrieved. No recommendation should be made.")
                 else:
                     st.success(f"Retrieved {len(results)} approved evidence items.")
                     evidence=[]
                     for i,r in enumerate(results,1):
                         c=r["chunk"]; label=f"[{i}] {c.document_id} — {c.title} — authority={c.authority} — score={r['score']}"; evidence.append(label+"\n"+c.text); st.markdown(f"**{label}**"); st.write(c.text)
                     if ai_runtime_available():
-                        with st.spinner("Generating grounded answer with Qwen 2.5 3B..."):
-                            try: st.subheader("Grounded AI Answer"); st.write(generate_answer(question,evidence))
-                            except Exception as exc: st.error(f"AI generation failed safely: {exc}")
-                    else:
-                        st.info("Qwen runtime is not installed in this environment. Retrieval is working; install requirements-ai.txt to enable local generation.")
+                        try: st.subheader("Grounded AI Answer"); st.write(generate_answer(question,evidence))
+                        except Exception as exc: st.error(f"AI generation failed safely: {exc}")
+                    else: st.info("Qwen runtime is not installed. Retrieval is working; install requirements-ai.txt to enable local generation.")
                     st.warning("Human approval is required before any maintenance, repair, financial or return-to-service action.")
-    descriptions=[
-        ("Maintenance Recommendations","Use PM history, faults, equipment condition, maintenance history and OEM guidance to recommend the next maintenance action."),
-        ("Communication Assistant","Classify driver emails and voicemail, identify safety/compliance priority, summarize the request and draft a response for human approval."),
-        ("Repair Recommendations","Combine fault codes, maintenance history, repair notes, OEM knowledge and vendor information to suggest diagnostic and repair options."),
-        ("Maintenance Scheduling","Combine due dates, equipment availability, vendor preferences, service capacity and operational constraints to recommend a low-disruption schedule."),
-        ("Predictive Risk","Estimate equipment failure risk from maintenance history, fault patterns, telemetry and operational signals, with explainable risk factors."),
-    ]
-    for tab,(title,desc) in zip(ai_tabs[1:],descriptions):
-        with tab:
-            st.subheader(title); st.write(desc); a,b,c=st.columns(3); a.metric("Status","Foundation Ready"); b.metric("Model","Qwen 2.5 3B"); c.metric("Human Approval","Required"); st.info("This capability will consume the validated data + RAG evidence. No autonomous operational decision is enabled.")
-
+    with ai_tabs[1]:
+        st.subheader("Maintenance Recommendations")
+        st.caption("Combines operational maintenance context with approved knowledge evidence. Recommendations are advisory only.")
+        if fleet.empty: st.info("No equipment data is available.")
+        else:
+            equipment_col = "equipment_id" if "equipment_id" in fleet.columns else fleet.columns[0]
+            equipment_id = st.selectbox("Equipment", fleet[equipment_col].astype(str).tolist())
+            eq_faults = faults[faults[equipment_col].astype(str).eq(str(equipment_id))] if equipment_col in faults.columns else faults
+            eq_pm = pm[pm[equipment_col].astype(str).eq(str(equipment_id))] if equipment_col in pm.columns else pm
+            eq_history = p1.get("Maintenance History", pd.DataFrame())
+            eq_history = eq_history[eq_history[equipment_col].astype(str).eq(str(equipment_id))] if equipment_col in eq_history.columns else eq_history
+            fault_text = " ".join(eq_faults.astype(str).fillna("").agg(" ".join, axis=1).tolist())
+            maintenance_context = " ".join(eq_pm.astype(str).fillna("").agg(" ".join, axis=1).tolist() + eq_history.astype(str).fillna("").agg(" ".join, axis=1).tolist())
+            driver_text = " ".join(requests[requests[equipment_col].astype(str).eq(str(equipment_id))].astype(str).fillna("").agg(" ".join, axis=1).tolist()) if equipment_col in requests.columns else ""
+            if st.button("Generate Maintenance Recommendation",type="primary"):
+                result = recommend(str(equipment_id), fault_text, driver_text, maintenance_context, load_chunks(KNOWLEDGE_DIR))
+                c=st.columns(4); c[0].metric("Priority",result.priority); c[1].metric("Evidence",len(result.evidence)); c[2].metric("Approval","Required"); c[3].metric("Equipment",result.equipment_id)
+                st.subheader("Recommendation"); st.write(result.recommendation)
+                st.subheader("Reasons"); [st.write(f"• {r}") for r in result.reasons]
+                st.subheader("Evidence Sources")
+                for source in result.evidence: st.write(f"• {source}")
+                st.warning("No autonomous action is taken. Human approval is required.")
+    descriptions=[("Communication Assistant","Classify driver emails and voicemail, identify safety/compliance priority, summarize the request and draft a response for human approval."),("Repair Recommendations","Combine fault codes, maintenance history, repair notes, OEM knowledge and vendor information to suggest diagnostic and repair options."),("Maintenance Scheduling","Combine due dates, equipment availability, vendor preferences, service capacity and operational constraints to recommend a low-disruption schedule."),("Predictive Risk","Estimate equipment failure risk from maintenance history, fault patterns, telemetry and operational signals, with explainable risk factors.")]
+    for tab,(title,desc) in zip(ai_tabs[2:],descriptions):
+        with tab: st.subheader(title); st.write(desc); a,b,c=st.columns(3); a.metric("Status","Foundation Ready"); b.metric("Model","Qwen 2.5 3B"); c.metric("Human Approval","Required"); st.info("This capability will consume validated operational data + RAG evidence. No autonomous operational decision is enabled.")
 else:
     st.header("👤 Human Approval"); st.caption("Safety, compliance, financial and operational decisions remain under human control.")
     if review_queue.empty: st.success("No review items currently require attention.")

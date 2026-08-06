@@ -1,0 +1,6 @@
+pm_id,equipment_id,pm_type,interval_miles,interval_days,last_service_date,last_service_mileage,current_due_date,current_due_mileage,scheduled_date,status,required_by_oem,required_by_company_policy
+PM001,EQ001,PM_A,25000,90,2026-05-20,160100,2026-08-18,185100,,OPEN,true,true
+PM002,EQ002,PM_B,30000,120,2026-04-20,215000,2026-08-12,245000,2026-08-09,SCHEDULED,true,true
+PM003,EQ003,PM_A,25000,90,2026-04-01,290000,2026-07-15,315000,,OVERDUE,true,true
+PM004,EQ004,PM_A,25000,90,2026-06-01,80000,2026-08-25,105000,,OPEN,true,true
+PM005,EQ005,PM_C,20000,60,2026-07-10,400000,2026-09-08,420000,,OPEN,true,true

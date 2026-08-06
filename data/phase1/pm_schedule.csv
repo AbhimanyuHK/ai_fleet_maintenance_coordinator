@@ -1,0 +1,6 @@
+pm_id,equipment_id,pm_type,interval_miles,interval_days,last_service_date,last_service_mileage,current_due_date,current_due_mileage,scheduled_date,status,required_by_oem,required_by_company_policy,vendor_id,location_id,source_system,source_record_id,ingested_at
+PM001,EQ001,PM_A,25000,90,2026-05-20,160100,2026-08-18,185100,2026-08-15,OPEN,true,true,V001,LOC001,TMT,PM001,2026-08-06T08:00:00Z
+PM002,EQ002,PM_B,30000,120,2026-04-20,215000,2026-08-12,245000,2026-08-09,SCHEDULED,true,true,V002,LOC002,TMT,PM002,2026-08-06T08:00:00Z
+PM003,EQ003,PM_A,25000,90,2026-04-01,290000,2026-07-15,315000,,OVERDUE,true,true,V001,LOC003,TMT,PM003,2026-08-06T08:00:00Z
+PM004,EQ004,PM_A,25000,90,2026-06-01,80000,2026-08-25,105000,,OPEN,true,true,V003,LOC004,TMT,PM004,2026-08-06T08:00:00Z
+PM005,EQ005,PM_C,20000,60,2026-07-10,400000,2026-09-08,420000,,OPEN,true,true,V004,LOC005,TMT,PM005,2026-08-06T08:00:00Z

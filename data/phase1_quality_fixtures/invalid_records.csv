@@ -1,0 +1,7 @@
+fixture_id,dataset,rule,expected_result,description
+BAD001,equipment_master,non_negative,FAIL,Negative mileage must be rejected
+BAD002,work_orders,date_order,FAIL,Closed timestamp before opened timestamp must be rejected
+BAD003,pm_schedule,equipment_fk,FAIL,Unknown equipment_id must be rejected
+BAD004,work_orders,non_negative,FAIL,Negative estimated cost must be rejected
+BAD005,equipment_master,unique_key,FAIL,Duplicate equipment_id must be rejected
+BAD006,equipment_master,required_value,FAIL,Missing equipment_id must be rejected

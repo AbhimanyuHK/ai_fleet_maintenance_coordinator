@@ -1,0 +1,6 @@
+inspection_id,equipment_id,inspection_type,inspection_date,inspection_status,finding_code,finding_description,safety_related,compliance_related,corrective_action_required,resolved_at
+I001,EQ001,DAILY_INSPECTION,2026-08-06,PASS,,,false,false,false,
+I002,EQ002,DAILY_INSPECTION,2026-08-06,FAIL,BRAKE_PRESSURE,Brake pressure below expected range,true,true,true,
+I003,EQ003,DAILY_INSPECTION,2026-08-06,FAIL,ABS,ABS warning remains active,true,true,true,
+I004,EQ004,DAILY_INSPECTION,2026-08-06,PASS,,,false,false,false,
+I005,EQ005,DAILY_INSPECTION,2026-08-06,FAIL,OIL_PRESSURE,Low oil pressure warning,true,true,true,

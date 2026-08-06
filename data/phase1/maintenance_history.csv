@@ -1,0 +1,6 @@
+history_id,equipment_id,work_order_id,service_date,repair_category,component,fault_code,repair_description,parts_cost,labor_cost,total_cost,vendor_id,warranty_flag,repeat_repair_flag,mileage_at_service,engine_hours_at_service
+H001,EQ001,WO001,2026-05-20,PM,ENGINE_OIL,,PM service completed,180,220,400,V001,false,false,160100,7400
+H002,EQ002,WO002,2026-05-01,BRAKE,BRAKE_SYSTEM,BRAKE_PRESSURE,Brake inspection and adjustment,320,440,760,V002,false,false,218000,9800
+H003,EQ002,WO003,2026-06-20,COOLING,RADIATOR,ENGINE_TEMP,Radiator hose replacement,180,330,510,V002,true,false,230500,10400
+H004,EQ003,WO004,2026-06-30,COOLING,COOLING_SYSTEM,ENGINE_TEMP,Cooling system repair,620,900,1520,V001,false,true,308500,13900
+H005,EQ005,WO005,2026-07-10,PM,ENGINE_OIL,,PM service completed,210,250,460,V003,false,false,400000,19100

@@ -1,0 +1,5 @@
+participant_id,message_id,participant_type,display_name,role,contact_reference
+P001,MSG001,driver,Driver 001,driver,DRIVER001
+P002,MSG002,driver,Driver 002,driver,DRIVER002
+P003,MSG003,vendor,Vendor A,service_provider,VENDOR001
+P004,MSG004,maintenance_coordinator,Fleet Coordinator,maintenance,COORD001

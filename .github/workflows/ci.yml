@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, phase-1-data-foundation]
+    branches: [main, phase-1-data-foundation, phase-2-data-foundation]
   pull_request:
     branches: [main]
 
@@ -24,3 +24,4 @@ jobs:
       - run: python scripts/normalize_phase1_data.py
       - run: python scripts/build_phase1_curated.py
       - run: python scripts/generate_phase1_readiness_report.py
+      - run: python scripts/validate_phase2_data.py

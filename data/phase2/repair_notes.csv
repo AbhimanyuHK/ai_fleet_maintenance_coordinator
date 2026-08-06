@@ -1,0 +1,4 @@
+repair_note_id,work_order_id,equipment_id,vendor_id,note_type,created_at,author_type,summary,repair_action,parts_used,return_to_service_status,source_system,source_record_id,ingested_at
+RN001,WO1001,EQ001,V001,DIAGNOSIS,2026-08-01T13:00:00Z,vendor,"Brake system inspection found worn brake chambers.","Replace brake chambers and inspect hoses.","Brake chamber; brake hose",PENDING,VENDOR_PORTAL,RN001,2026-08-01T13:05:00Z
+RN002,WO1003,EQ003,V002,DIAGNOSIS,2026-08-03T15:00:00Z,vendor,"Engine sensor fault confirmed.","Replace sensor assembly and clear fault.","Sensor assembly",PENDING,VENDOR_PORTAL,RN002,2026-08-03T15:05:00Z
+RN003,WO1004,EQ004,V001,COMPLETION,2026-08-06T16:00:00Z,vendor,"Scheduled PM completed with no additional defects.","PM completed and inspection passed.","Oil; filters",AVAILABLE,VENDOR_PORTAL,RN003,2026-08-06T16:05:00Z

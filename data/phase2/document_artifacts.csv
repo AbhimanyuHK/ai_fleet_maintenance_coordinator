@@ -1,0 +1,7 @@
+document_artifact_id,document_type,file_name,mime_type,storage_uri,content_hash,received_at,source_system,source_record_id,extraction_status,contains_pii,retention_class
+DOC001,vendor_estimate,estimate_1001.pdf,application/pdf,synthetic://vendor-estimates/estimate_1001.pdf,hash-est-1001,2026-08-01T11:59:00Z,VENDOR_PORTAL,DOC001,READY,false,MAINTENANCE_FINANCIAL
+DOC002,vendor_estimate,estimate_1003.pdf,application/pdf,synthetic://vendor-estimates/estimate_1003.pdf,hash-est-1003,2026-08-03T14:04:00Z,VENDOR_PORTAL,DOC002,READY,false,MAINTENANCE_FINANCIAL
+DOC003,vendor_estimate,estimate_1004.pdf,application/pdf,synthetic://vendor-estimates/estimate_1004.pdf,hash-est-1004,2026-08-04T14:59:00Z,VENDOR_PORTAL,DOC003,READY,false,MAINTENANCE_FINANCIAL
+DOC004,vendor_invoice,invoice_1001.pdf,application/pdf,synthetic://vendor-invoices/invoice_1001.pdf,hash-inv-1001,2026-08-05T12:59:00Z,VENDOR_PORTAL,DOC004,READY,false,MAINTENANCE_FINANCIAL
+DOC005,vendor_invoice,invoice_1003.pdf,application/pdf,synthetic://vendor-invoices/invoice_1003.pdf,hash-inv-1003,2026-08-06T13:59:00Z,VENDOR_PORTAL,DOC005,READY,false,MAINTENANCE_FINANCIAL
+DOC006,vendor_invoice,invoice_1004.pdf,application/pdf,synthetic://vendor-invoices/invoice_1004.pdf,hash-inv-1004,2026-08-06T14:59:00Z,VENDOR_PORTAL,DOC006,READY,false,MAINTENANCE_FINANCIAL

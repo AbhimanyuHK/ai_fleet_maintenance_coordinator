@@ -1,0 +1,5 @@
+review_task_id,task_type,priority,entity_type,entity_id,reason,status,assigned_role,created_at,resolved_at,resolution
+REV001,SAFETY_REQUEST,CRITICAL,driver_request,REQ003,"Safety-related driver request requires human decision",OPEN,FLEET_MAINTENANCE_MANAGER,2026-08-01T09:16:00Z,,
+REV002,ESTIMATE_APPROVAL,HIGH,vendor_estimate,EST002,"Warranty/repair estimate requires review",OPEN,FLEET_MAINTENANCE_MANAGER,2026-08-03T14:10:00Z,,
+REV003,INVOICE_VARIANCE,HIGH,vendor_invoice,INV001,"Invoice labor amount differs from estimate",OPEN,FLEET_MAINTENANCE_MANAGER,2026-08-05T13:10:00Z,,
+REV004,TRANSCRIPTION_FAILURE,MEDIUM,voicemail,VM003,"Voicemail transcription failed; manual review required",OPEN,FLEET_MAINTENANCE_COORDINATOR,2026-08-03T12:02:00Z,,

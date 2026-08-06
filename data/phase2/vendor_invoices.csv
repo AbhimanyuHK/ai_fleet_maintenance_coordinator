@@ -1,0 +1,4 @@
+invoice_id,work_order_id,vendor_id,invoice_number,invoice_date,due_date,labor_amount,parts_amount,sublet_amount,tax_amount,total_invoice,estimate_id,warranty_indicator,payment_status,document_artifact_id,source_system,source_record_id,ingested_at
+INV001,WO1001,V001,INV-1001,2026-08-05,2026-09-04,900.00,1250.00,0.00,215.00,2365.00,EST001,false,PENDING,DOC004,VENDOR_PORTAL,INV001,2026-08-05T13:00:00Z
+INV002,WO1003,V002,INV-1003,2026-08-06,2026-09-05,620.00,980.00,150.00,175.00,1925.00,EST002,true,PENDING,DOC005,VENDOR_PORTAL,INV002,2026-08-06T14:00:00Z
+INV003,WO1004,V001,INV-1004,2026-08-06,2026-09-05,400.00,300.00,0.00,70.00,770.00,EST003,false,APPROVED,DOC006,VENDOR_PORTAL,INV003,2026-08-06T15:00:00Z

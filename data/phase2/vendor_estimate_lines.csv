@@ -1,0 +1,9 @@
+estimate_line_id,estimate_id,line_type,description,quantity,unit_price,labor_hours,labor_rate,srt_hours,amount,warranty_eligible
+EL001,EST001,LABOR,Brake system diagnosis and repair,1,0.00,5.0,170.00,4.5,850.00,false
+EL002,EST001,PART,Brake chamber,2,425.00,0,0,0,850.00,false
+EL003,EST001,PART,Brake hose,4,100.00,0,0,0,400.00,false
+EL004,EST002,LABOR,Engine diagnostic,1,0.00,4.0,155.00,3.5,620.00,true
+EL005,EST002,PART,Sensor assembly,2,490.00,0,0,0,980.00,true
+EL006,EST002,SUBLET,Towing,1,150.00,0,0,0,150.00,false
+EL007,EST003,LABOR,PM service labor,1,0.00,2.5,160.00,2.5,400.00,false
+EL008,EST003,PART,Oil and filters,1,300.00,0,0,0,300.00,false

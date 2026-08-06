@@ -1,0 +1,6 @@
+work_order_id,equipment_id,opened_at,status,work_type,priority,problem_description,repair_description,vendor_id,service_location_id,estimated_cost,approved_cost,actual_cost,approval_status,safety_hold,compliance_hold,completion_at,last_updated_at,closed_at,delay_reason
+WO001,EQ001,2026-05-20T09:00:00Z,CLOSED,PM,MEDIUM,PM due,PM service completed,V001,LOC001,400,400,400,APPROVED,false,false,2026-05-20T15:00:00Z,2026-05-20T16:00:00Z,2026-05-20T16:00:00Z,
+WO002,EQ002,2026-05-01T09:00:00Z,CLOSED,REPAIR,HIGH,Brake pressure warning,Brake inspection and adjustment,V002,LOC002,760,760,760,APPROVED,false,false,2026-05-01T17:00:00Z,2026-05-01T18:00:00Z,2026-05-01T18:00:00Z,
+WO003,EQ003,2026-07-01T09:00:00Z,OPEN,REPAIR,HIGH,Repeated cooling fault,Awaiting parts,V001,LOC003,2200,2200,0,APPROVED,true,true,,2026-08-06T08:00:00Z,,OEM part delay
+WO004,EQ004,2026-08-05T09:00:00Z,OPEN,REPAIR,LOW,Cabin light fault,,V003,LOC004,150,0,0,PENDING,false,false,,2026-08-06T08:00:00Z,,
+WO005,EQ005,2026-07-01T09:00:00Z,OPEN,REPAIR,CRITICAL,Low oil pressure,Diagnostic inspection,V003,LOC005,950,950,0,APPROVED,true,true,,2026-08-06T07:00:00Z,,

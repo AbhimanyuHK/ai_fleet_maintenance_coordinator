@@ -1,0 +1,8 @@
+invoice_line_id,invoice_id,line_type,description,quantity,unit_price,labor_hours,labor_rate,srt_hours,amount,warranty_eligible
+IL001,INV001,LABOR,Brake system diagnosis and repair,1,0.00,5.0,180.00,4.5,900.00,false
+IL002,INV001,PART,Brake chamber,2,625.00,0,0,0,1250.00,false
+IL003,INV002,LABOR,Engine diagnostic,1,0.00,4.0,155.00,3.5,620.00,true
+IL004,INV002,PART,Sensor assembly,2,490.00,0,0,0,980.00,true
+IL005,INV002,SUBLET,Towing,1,150.00,0,0,0,150.00,false
+IL006,INV003,LABOR,PM service labor,1,0.00,2.5,160.00,2.5,400.00,false
+IL007,INV003,PART,Oil and filters,1,300.00,0,0,0,300.00,false

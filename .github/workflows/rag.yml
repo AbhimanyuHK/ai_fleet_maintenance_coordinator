@@ -1,0 +1,78 @@
+name: RAG Pipeline
+
+on:
+  push:
+    branches: [phase-3-knowledge-foundation, main]
+    paths:
+      - 'data/phase3/**'
+      - 'app/phase3_*.py'
+      - 'scripts/*phase3*'
+      - 'requirements.txt'
+      - '.github/workflows/rag.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'data/phase3/**'
+      - 'app/phase3_*.py'
+      - 'scripts/*phase3*'
+      - 'requirements.txt'
+      - '.github/workflows/rag.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  knowledge-validation:
+    name: Validate knowledge and retrieval
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pytest -q tests/test_phase3_*.py
+      - run: python scripts/build_phase3_knowledge.py
+      - run: python scripts/evaluate_phase3_retrieval.py
+
+  vector-index:
+    name: Build BGE embeddings and FAISS index
+    needs: knowledge-validation
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      HF_HOME: ${{ github.workspace }}/.cache/huggingface
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements.txt
+      - run: python scripts/build_phase3_embeddings.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase3-rag-vector-index
+          path: artifacts/phase3/vector_index/
+          if-no-files-found: error
+          retention-days: 7
+
+  rag-smoke-test:
+    name: RAG retrieval smoke test
+    needs: vector-index
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements.txt
+      - run: python scripts/build_phase3_embeddings.py
+      - run: python scripts/evaluate_phase3_retrieval.py

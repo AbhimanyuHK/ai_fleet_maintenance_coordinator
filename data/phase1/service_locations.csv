@@ -1,0 +1,6 @@
+location_id,vendor_id,location_name,address,city,state,latitude,longitude,service_hours,capacity_per_day,supported_services,supported_asset_types,preferred_flag,active_flag
+LOC001,V001,Vendor A Dallas,100 Fleet Way,Dallas,TX,32.7767,-96.7970,06:00-22:00,20,PM|BRAKE|ENGINE|COOLING,TRACTOR,true,true
+LOC002,V002,Vendor B Atlanta,200 Fleet Way,Atlanta,GA,33.7490,-84.3880,06:00-22:00,15,PM|BRAKE|ENGINE,TRACTOR,true,true
+LOC003,V001,Vendor A Memphis,300 Fleet Way,Memphis,TN,35.1495,-90.0490,06:00-22:00,18,PM|BRAKE|ENGINE|COOLING,TRACTOR,true,true
+LOC004,V003,Vendor C Chicago,400 Fleet Way,Chicago,IL,41.8781,-87.6298,07:00-19:00,10,PM|LIGHTING|ENGINE,TRACTOR,false,true
+LOC005,V003,Vendor C Indianapolis,500 Fleet Way,Indianapolis,IN,39.7684,-86.1581,07:00-19:00,8,ENGINE|BRAKE,TRACTOR,false,true

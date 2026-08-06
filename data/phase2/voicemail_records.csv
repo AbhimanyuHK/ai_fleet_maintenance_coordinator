@@ -1,0 +1,4 @@
+voicemail_id,received_at,duration_seconds,caller_type,contact_reference,equipment_id,transcription_status,transcript_text,safety_related,source_system,source_record_id,ingested_at
+VM001,2026-08-01T09:10:00Z,42,driver,DRIVER001,EQ001,TRANSCRIBED,"Brake warning is on and the truck feels unsafe to stop.",true,VOICEMAIL,VM001,2026-08-01T09:12:00Z
+VM002,2026-08-02T11:20:00Z,28,driver,DRIVER002,EQ002,TRANSCRIBED,"Can you confirm where I should take the truck for PM service?",false,VOICEMAIL,VM002,2026-08-02T11:22:00Z
+VM003,2026-08-03T12:00:00Z,19,driver,DRIVER003,EQ004,FAILED,,false,VOICEMAIL,VM003,2026-08-03T12:01:00Z

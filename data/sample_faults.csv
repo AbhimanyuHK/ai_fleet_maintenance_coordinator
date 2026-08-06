@@ -1,0 +1,5 @@
+fault_id,equipment_id,fault_code,description,severity,first_detected,repeat_count,safety_related
+F-1001,U-1001,BRAKE_PRESSURE,Brake pressure warning,HIGH,2026-08-06T08:00:00Z,2,true
+F-1002,U-1002,ENGINE_TEMP,Repeated engine temperature warning,HIGH,2026-08-05T11:00:00Z,4,false
+F-1003,U-1003,CABIN_LIGHT,Cabin light not working,LOW,2026-08-06T07:30:00Z,1,false
+F-1004,U-1004,ABS,ABS warning,CRITICAL,2026-08-06T09:10:00Z,1,true

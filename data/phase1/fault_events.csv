@@ -1,0 +1,6 @@
+fault_id,equipment_id,fault_code,fault_source,first_detected_at,last_detected_at,occurrence_count,severity,safety_related,compliance_related,active_flag,odometer,engine_hours,raw_description,normalized_description
+F001,EQ001,ENGINE_TEMP,OEM,2026-08-04T10:00:00Z,2026-08-06T07:30:00Z,4,HIGH,false,false,true,182420,8405,Repeated engine temperature warning,Engine temperature warning
+F002,EQ002,BRAKE_PRESSURE,ELD,2026-08-06T06:10:00Z,2026-08-06T06:10:00Z,1,CRITICAL,true,true,true,241850,10910,Brake pressure loss warning,Brake pressure loss
+F003,EQ003,ABS,OEM,2026-08-05T12:00:00Z,2026-08-06T08:00:00Z,3,HIGH,true,true,true,318200,14490,ABS warning,ABS system warning
+F004,EQ004,CABIN_LIGHT,DRIVER,2026-08-06T08:20:00Z,2026-08-06T08:20:00Z,1,LOW,false,false,true,95580,4198,Cabin light not working,Cabin lighting fault
+F005,EQ005,OIL_PRESSURE,OEM,2026-08-02T11:00:00Z,2026-08-06T05:00:00Z,5,HIGH,true,true,true,412550,19795,Low oil pressure detected,Engine oil pressure warning

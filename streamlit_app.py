@@ -4,13 +4,13 @@ import streamlit as st
 from app.phase2_data_quality import build_review_queue, reconcile_estimates_invoices
 from app.phase3_retrieval import load_chunks, retrieve
 from app.maintenance_recommendations import recommend
+from app.communication_assistant import assess
 from app.qwen_rag import MODEL_ID, ai_runtime_available, generate_answer
 
 ROOT = Path(__file__).resolve().parent
 PHASE1_DIR = ROOT / "data" / "phase1"
 PHASE2_DIR = ROOT / "data" / "phase2"
 KNOWLEDGE_DIR = ROOT / "data" / "phase3" / "knowledge"
-
 PHASE1_DATASETS = {"Equipment Master":"equipment_master.csv","PM Schedule":"pm_schedule.csv","Maintenance History":"maintenance_history.csv","Fault Events":"fault_events.csv","Work Orders":"work_orders.csv","Vendor Master":"vendor_master.csv","Service Locations":"service_locations.csv","Equipment Availability":"equipment_availability.csv","Campaigns / Recalls":"campaigns.csv","Compliance Inspections":"compliance_inspections.csv"}
 PHASE2_DATASETS = {"Communication Messages":"communication_messages.csv","Communication Participants":"communication_participants.csv","Voicemails":"voicemail_records.csv","Driver Requests":"driver_requests.csv","Vendor Estimates":"vendor_estimates.csv","Estimate Lines":"vendor_estimate_lines.csv","Vendor Invoices":"vendor_invoices.csv","Invoice Lines":"vendor_invoice_lines.csv","Repair Notes":"repair_notes.csv","Document Artifacts":"document_artifacts.csv","Human Review Tasks":"human_review_tasks.csv"}
 
@@ -100,21 +100,44 @@ elif section == "🤖 AI Intelligence":
             equipment_id = st.selectbox("Equipment", fleet[equipment_col].astype(str).tolist())
             eq_faults = faults[faults[equipment_col].astype(str).eq(str(equipment_id))] if equipment_col in faults.columns else faults
             eq_pm = pm[pm[equipment_col].astype(str).eq(str(equipment_id))] if equipment_col in pm.columns else pm
-            eq_history = p1.get("Maintenance History", pd.DataFrame())
-            eq_history = eq_history[eq_history[equipment_col].astype(str).eq(str(equipment_id))] if equipment_col in eq_history.columns else eq_history
-            fault_text = " ".join(eq_faults.astype(str).fillna("").agg(" ".join, axis=1).tolist())
-            maintenance_context = " ".join(eq_pm.astype(str).fillna("").agg(" ".join, axis=1).tolist() + eq_history.astype(str).fillna("").agg(" ".join, axis=1).tolist())
-            driver_text = " ".join(requests[requests[equipment_col].astype(str).eq(str(equipment_id))].astype(str).fillna("").agg(" ".join, axis=1).tolist()) if equipment_col in requests.columns else ""
+            eq_history = p1.get("Maintenance History", pd.DataFrame()); eq_history = eq_history[eq_history[equipment_col].astype(str).eq(str(equipment_id))] if equipment_col in eq_history.columns else eq_history
+            fault_text = " ".join(eq_faults.astype(str).fillna("").agg(" ".join, axis=1).tolist()); maintenance_context = " ".join(eq_pm.astype(str).fillna("").agg(" ".join, axis=1).tolist() + eq_history.astype(str).fillna("").agg(" ".join, axis=1).tolist()); driver_text = " ".join(requests[requests[equipment_col].astype(str).eq(str(equipment_id))].astype(str).fillna("").agg(" ".join, axis=1).tolist()) if equipment_col in requests.columns else ""
             if st.button("Generate Maintenance Recommendation",type="primary"):
-                result = recommend(str(equipment_id), fault_text, driver_text, maintenance_context, load_chunks(KNOWLEDGE_DIR))
-                c=st.columns(4); c[0].metric("Priority",result.priority); c[1].metric("Evidence",len(result.evidence)); c[2].metric("Approval","Required"); c[3].metric("Equipment",result.equipment_id)
-                st.subheader("Recommendation"); st.write(result.recommendation)
-                st.subheader("Reasons"); [st.write(f"• {r}") for r in result.reasons]
-                st.subheader("Evidence Sources")
-                for source in result.evidence: st.write(f"• {source}")
-                st.warning("No autonomous action is taken. Human approval is required.")
-    descriptions=[("Communication Assistant","Classify driver emails and voicemail, identify safety/compliance priority, summarize the request and draft a response for human approval."),("Repair Recommendations","Combine fault codes, maintenance history, repair notes, OEM knowledge and vendor information to suggest diagnostic and repair options."),("Maintenance Scheduling","Combine due dates, equipment availability, vendor preferences, service capacity and operational constraints to recommend a low-disruption schedule."),("Predictive Risk","Estimate equipment failure risk from maintenance history, fault patterns, telemetry and operational signals, with explainable risk factors.")]
-    for tab,(title,desc) in zip(ai_tabs[2:],descriptions):
+                result = recommend(str(equipment_id), fault_text, driver_text, maintenance_context, load_chunks(KNOWLEDGE_DIR)); c=st.columns(4); c[0].metric("Priority",result.priority); c[1].metric("Evidence",len(result.evidence)); c[2].metric("Approval","Required"); c[3].metric("Equipment",result.equipment_id); st.subheader("Recommendation"); st.write(result.recommendation); st.subheader("Reasons"); [st.write(f"• {r}") for r in result.reasons]; st.subheader("Evidence Sources"); [st.write(f"• {source}") for source in result.evidence]; st.warning("No autonomous action is taken. Human approval is required.")
+    with ai_tabs[2]:
+        st.subheader("Communication Assistant")
+        st.caption("Classify driver communication, prioritize safety/compliance, retrieve evidence and prepare a response draft. Nothing is sent automatically.")
+        source_options=["Manual message"]
+        if not requests.empty: source_options.append("Driver request")
+        if not messages.empty: source_options.append("Email/message")
+        if not voicemails.empty: source_options.append("Voicemail")
+        source=st.selectbox("Input source",source_options)
+        equipment_id=None; message_text=""
+        if source == "Manual message":
+            equipment_id=st.text_input("Equipment ID (optional)"); message_text=st.text_area("Driver message",height=140,placeholder="Paste the driver email, voicemail transcription, or request...")
+        else:
+            source_df=requests if source=="Driver request" else messages if source=="Email/message" else voicemails
+            display_col="request_id" if "request_id" in source_df else "message_id" if "message_id" in source_df else "voicemail_id" if "voicemail_id" in source_df else source_df.columns[0]
+            selected=st.selectbox("Record",source_df[display_col].astype(str).tolist())
+            row=source_df[source_df[display_col].astype(str).eq(str(selected))].iloc[0]
+            equipment_id=str(row.get("equipment_id")) if pd.notna(row.get("equipment_id")) else None
+            text_cols=[c for c in source_df.columns if any(x in c.lower() for x in ["message","text","body","transcript","description","request"])]
+            message_text=" ".join(str(row[c]) for c in text_cols if pd.notna(row[c]))
+            st.text_area("Source content",message_text,height=140,disabled=True)
+        if st.button("Analyze Communication",type="primary"):
+            if not message_text.strip(): st.warning("Provide or select a driver communication first.")
+            else:
+                result=assess(message_text,load_chunks(KNOWLEDGE_DIR),equipment_id)
+                c=st.columns(5); c[0].metric("Category",result.category); c[1].metric("Priority",result.priority); c[2].metric("Safety","YES" if result.safety_related else "NO"); c[3].metric("Compliance","YES" if result.compliance_related else "NO"); c[4].metric("Approval","Required")
+                st.subheader("Summary"); st.write(result.summary)
+                st.subheader("Draft Response"); st.text_area("Human-editable draft",result.draft_response,height=180)
+                st.subheader("Evidence");
+                if result.evidence:
+                    for source_id in result.evidence: st.write(f"• {source_id}")
+                else: st.info("No approved knowledge evidence was retrieved. Escalate rather than invent guidance.")
+                st.warning("Draft only — no email, voicemail response, repair, or financial action is sent automatically.")
+    descriptions=[("Repair Recommendations","Combine fault codes, maintenance history, repair notes, OEM knowledge and vendor information to suggest diagnostic and repair options."),("Maintenance Scheduling","Combine due dates, equipment availability, vendor preferences, service capacity and operational constraints to recommend a low-disruption schedule."),("Predictive Risk","Estimate equipment failure risk from maintenance history, fault patterns, telemetry and operational signals, with explainable risk factors.")]
+    for tab,(title,desc) in zip(ai_tabs[3:],descriptions):
         with tab: st.subheader(title); st.write(desc); a,b,c=st.columns(3); a.metric("Status","Foundation Ready"); b.metric("Model","Qwen 2.5 3B"); c.metric("Human Approval","Required"); st.info("This capability will consume validated operational data + RAG evidence. No autonomous operational decision is enabled.")
 else:
     st.header("👤 Human Approval"); st.caption("Safety, compliance, financial and operational decisions remain under human control.")

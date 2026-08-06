@@ -1,0 +1,5 @@
+message_id,channel,direction,sender_type,subject,received_at,equipment_id,work_order_id,request_type,priority,safety_related,body_text,source_system,source_record_id,ingested_at
+MSG001,email,inbound,driver,Brake warning on TRK001,2026-08-01T08:15:00Z,EQ001,,BRAKE_ISSUE,HIGH,true,"Driver reports brake warning light and reduced braking response.",EMAIL,MSG001,2026-08-01T08:20:00Z
+MSG002,email,inbound,driver,Oil service question,2026-08-02T10:30:00Z,EQ002,,PM_REQUEST,MEDIUM,false,"Driver asks when the next oil service is scheduled.",EMAIL,MSG002,2026-08-02T10:35:00Z
+MSG003,email,inbound,vendor,Estimate for WO1003,2026-08-03T14:00:00Z,EQ003,WO1003,ESTIMATE,MEDIUM,false,"Vendor submitted estimate for diagnostic and repair work.",VENDOR_PORTAL,MSG003,2026-08-03T14:05:00Z
+MSG004,email,outbound,maintenance_coordinator,Repair delay update,2026-08-04T16:00:00Z,EQ003,WO1003,STATUS_UPDATE,MEDIUM,false,"Repair delayed pending parts availability.",EMAIL,MSG004,2026-08-04T16:01:00Z

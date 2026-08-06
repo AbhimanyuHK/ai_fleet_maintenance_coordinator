@@ -6,22 +6,20 @@ import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RAW = ROOT / "data" / "phase1"
+STANDARDIZED = ROOT / "data" / "phase1_standardized"
 CURATED = ROOT / "data" / "phase1_curated"
 
 
 def load(name: str) -> pd.DataFrame:
-    return pd.read_csv(RAW / f"{name}.csv")
+    return pd.read_csv(STANDARDIZED / f"{name}.csv")
 
 
 def build_pm_due_queue() -> pd.DataFrame:
     pm = load("pm_schedule")
-    pm["current_due_date"] = pd.to_datetime(pm["current_due_date"], errors="coerce")
-    as_of = pd.Timestamp("2026-08-06")
+    pm["current_due_date"] = pd.to_datetime(pm["current_due_date"], errors="coerce", utc=True)
+    as_of = pd.Timestamp("2026-08-06T00:00:00Z")
     pm["days_to_due"] = (pm["current_due_date"] - as_of).dt.days
-    pm["schedule_required"] = (
-        pm["status"].isin(["OPEN", "OVERDUE"]) & (pm["days_to_due"] <= 5)
-    )
+    pm["schedule_required"] = pm["status"].isin(["OPEN", "OVERDUE"]) & (pm["days_to_due"] <= 5)
     pm["pm_priority"] = "NONE"
     pm.loc[pm["days_to_due"] < 0, "pm_priority"] = "CRITICAL"
     pm.loc[(pm["days_to_due"] >= 0) & (pm["days_to_due"] <= 5), "pm_priority"] = "HIGH"
@@ -30,9 +28,9 @@ def build_pm_due_queue() -> pd.DataFrame:
 
 def build_active_fault_queue() -> pd.DataFrame:
     faults = load("fault_events")
-    active = faults[faults["active_flag"].astype(str).str.lower() == "true"].copy()
+    active = faults[faults["active_flag"].fillna(False)].copy()
     active["priority"] = active["severity"].str.upper()
-    active.loc[active["safety_related"].astype(str).str.lower() == "true", "priority"] = "CRITICAL"
+    active.loc[active["safety_related"].fillna(False), "priority"] = "CRITICAL"
     active.loc[(active["occurrence_count"] >= 3) & (active["priority"] == "MEDIUM"), "priority"] = "HIGH"
     rank = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
     active["priority_rank"] = active["priority"].map(rank).fillna(9)
@@ -56,7 +54,7 @@ def build_equipment_snapshot() -> pd.DataFrame:
     pm = load("pm_schedule")
     inspections = load("compliance_inspections")
 
-    active_faults = faults[faults["active_flag"].astype(str).str.lower() == "true"].groupby("equipment_id").size().rename("active_fault_count")
+    active_faults = faults[faults["active_flag"].fillna(False)].groupby("equipment_id").size().rename("active_fault_count")
     open_wo = wo[wo["status"].str.upper() == "OPEN"].groupby("equipment_id").size().rename("open_work_order_count")
     pm_open = pm[pm["status"].isin(["OPEN", "OVERDUE"])].groupby("equipment_id").size().rename("open_pm_count")
     failed = inspections[inspections["inspection_status"].str.upper() == "FAIL"].groupby("equipment_id").size().rename("failed_inspection_count")

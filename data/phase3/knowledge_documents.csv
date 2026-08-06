@@ -1,0 +1,7 @@
+document_id,source_id,document_name,document_type,version,effective_date,status,language,file_path,content_hash,approved_for_rag
+DOC001,KS001,Brake Service Procedure,OEM_MANUAL,1.0,2026-01-01,APPROVED,en,data/phase3/documents/doc001_brake_service.md,synthetic-sha-doc001,true
+DOC002,KS002,Fault Code Reference,OEM_FAULT_GUIDE,1.0,2026-01-01,APPROVED,en,data/phase3/documents/doc002_fault_codes.md,synthetic-sha-doc002,true
+DOC003,KS003,Fleet Maintenance Policy,COMPANY_POLICY,3.0,2026-01-01,APPROVED,en,data/phase3/documents/doc003_maintenance_policy.md,synthetic-sha-doc003,true
+DOC004,KS004,Warranty Coverage Policy,WARRANTY_POLICY,2.0,2026-01-01,APPROVED,en,data/phase3/documents/doc004_warranty_policy.md,synthetic-sha-doc004,true
+DOC005,KS005,Maintenance Compliance Guide,COMPLIANCE_GUIDE,1.0,2026-01-01,APPROVED,en,data/phase3/documents/doc005_compliance.md,synthetic-sha-doc005,true
+DOC006,KS006,VMRS Coding Reference,VMRS_GUIDE,1.0,2026-01-01,APPROVED,en,data/phase3/documents/doc006_vmrs.md,synthetic-sha-doc006,true

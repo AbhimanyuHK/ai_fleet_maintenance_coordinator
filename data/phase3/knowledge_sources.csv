@@ -1,0 +1,7 @@
+source_id,source_type,source_name,authority_level,owner,effective_date,expiration_date,version,status,scope
+KS001,OEM_MANUAL,OEM Brake Service Manual,HIGH,OEM,2026-01-01,,1.0,APPROVED,Brake inspection and service procedures
+KS002,OEM_FAULT_GUIDE,OEM Fault Code Reference,HIGH,OEM,2026-01-01,,1.0,APPROVED,Fault-code definitions and diagnostic guidance
+KS003,COMPANY_POLICY,Fleet Maintenance Policy,HIGH,FLEET_MAINTENANCE,2026-01-01,,3.0,APPROVED,Maintenance approval and operational policy
+KS004,WARRANTY_POLICY,Warranty Coverage Policy,HIGH,FLEET_WARRANTY,2026-01-01,,2.0,APPROVED,Warranty eligibility and documentation requirements
+KS005,COMPLIANCE_GUIDE,FMCSA Maintenance Compliance Guide,HIGH,COMPLIANCE,2026-01-01,,1.0,APPROVED,Maintenance inspection and recordkeeping requirements
+KS006,VMRS_GUIDE,VMRS Coding Reference,MEDIUM,FLEET_MAINTENANCE,2026-01-01,,1.0,APPROVED,Maintenance component and repair coding

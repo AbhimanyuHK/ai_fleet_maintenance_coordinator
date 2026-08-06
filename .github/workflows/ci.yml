@@ -17,3 +17,5 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pytest -q
       - run: python scripts/validate_phase1_data.py
+      - run: python scripts/build_phase1_curated.py
+      - run: python scripts/generate_phase1_readiness_report.py

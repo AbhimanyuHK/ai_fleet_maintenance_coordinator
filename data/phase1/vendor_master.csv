@@ -1,0 +1,5 @@
+vendor_id,vendor_name,vendor_type,status,preferred_flag,national_account_flag,supported_asset_types,supported_services,labor_rate,warranty_capability
+V001,Preferred Fleet Vendor A,MAINTENANCE,ACTIVE,true,true,TRACTOR,PM|BRAKE|ENGINE|COOLING,110,true
+V002,Preferred Fleet Vendor B,MAINTENANCE,ACTIVE,true,true,TRACTOR,PM|BRAKE|ENGINE,105,true
+V003,Regional Fleet Vendor C,MAINTENANCE,ACTIVE,false,false,TRACTOR,PM|LIGHTING|ENGINE,125,false
+V004,Emergency Vendor D,ROADSIDE,ACTIVE,false,false,TRACTOR,ROADSIDE|TOWING,150,false

@@ -48,6 +48,18 @@ class IntegrationOrchestrator:
                 )
             except (ConnectionError, TimeoutError, OSError, ValueError) as exc:
                 last_error = str(exc)
+                continue
+            except Exception as exc:
+                # Unknown/programming/data-contract failures are not transient.
+                # Surface them as a failed source run without repeatedly executing
+                # potentially unsafe or invalid connector logic.
+                return SourceRunResult(
+                    source=adapter.source.value,
+                    status="FAILED",
+                    attempts=attempt,
+                    accepted=0,
+                    error=str(exc),
+                )
         return SourceRunResult(
             source=adapter.source.value,
             status="FAILED",

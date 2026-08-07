@@ -11,6 +11,7 @@ from app.maintenance_scheduling_ui import render_maintenance_scheduling
 from app.predictive_risk import RiskContext, assess_risk
 from app.qwen_rag import MODEL_ID, ai_runtime_available, generate_answer
 from app.ai_freshness_gate import evaluate_ai_freshness
+from app.ai_readiness_policy import policy_for, required_sources_for
 from app.integration_config import DEFAULT_SOURCE_CONFIG
 from app.integration_pipeline import IntegrationStore
 from app.integrations import build_demo_adapters
@@ -39,6 +40,17 @@ p1,p2=load_group(P1,P1_FILES),load_group(P2,P2_FILES)
 fleet=p1.get("Equipment Master",pd.DataFrame()); pm=p1.get("PM Schedule",pd.DataFrame()); history=p1.get("Maintenance History",pd.DataFrame()); faults=p1.get("Fault Events",pd.DataFrame()); work_orders=p1.get("Work Orders",pd.DataFrame()); vendors=p1.get("Vendor Master",pd.DataFrame()); locations=p1.get("Service Locations",pd.DataFrame()); availability=p1.get("Equipment Availability",pd.DataFrame()); campaigns=p1.get("Campaigns / Recalls",pd.DataFrame()); compliance=p1.get("Compliance Inspections",pd.DataFrame()); requests=p2.get("Driver Requests",pd.DataFrame()); messages=p2.get("Communication Messages",pd.DataFrame()); voicemails=p2.get("Voicemails",pd.DataFrame()); estimates=p2.get("Vendor Estimates",pd.DataFrame()); invoices=p2.get("Vendor Invoices",pd.DataFrame()); repair_notes=p2.get("Repair Notes",pd.DataFrame())
 review_queue=build_review_queue(P2); reconciliation=reconcile_estimates_invoices(P2)
 section=st.sidebar.radio("Open",["📊 Data Foundation","🤖 AI Intelligence","👤 Human Approval"],label_visibility="collapsed"); st.sidebar.divider(); st.sidebar.caption("AI runtime"); st.sidebar.info(f"Model: {MODEL_ID}\n\nLocal runtime: {'Available' if ai_runtime_available() else 'Not installed'}\n\nHuman approval: Required")
+
+def ai_policy(workflow: str):
+    """Evaluate workflow-specific readiness using the current demo integration snapshot."""
+    if "integration_store" not in st.session_state:
+        st.session_state["integration_store"] = IntegrationStore()
+    store = st.session_state["integration_store"]
+    last_ingestions = {source: store.latest_event(source) for source in [s.value for s in DEFAULT_SOURCE_CONFIG]}
+    required = required_sources_for(workflow)
+    decision = evaluate_ai_freshness(DEFAULT_SOURCE_CONFIG, last_ingestions, required, datetime.now(timezone.utc))
+    return policy_for(workflow, decision)
+
 if section=="📊 Data Foundation":
     st.header("📊 Data Foundation"); tabs=st.tabs(["Fleet Overview","PM Management","Faults & Alerts","Work Orders & Repairs","Driver Requests","Vendor Management","Estimates & Invoices","Compliance & Campaigns","Data Quality"])
     with tabs[0]:
@@ -62,27 +74,22 @@ elif section=="🤖 AI Intelligence":
     st.header("🤖 AI Intelligence"); tabs=st.tabs(["AI Data Readiness","Maintenance Knowledge Assistant","Maintenance Recommendations","Communication Assistant","Repair Recommendations","Maintenance Scheduling","Predictive Risk"])
     with tabs[0]:
         st.subheader("AI Data Readiness")
-        st.caption("AI recommendations are blocked when required integration data is missing or outside its configured freshness SLA.")
+        st.caption("AI workflows are blocked when their required integration data is missing or outside its configured freshness SLA.")
         if "integration_store" not in st.session_state: st.session_state["integration_store"] = IntegrationStore()
         if st.button("Refresh Demo Integration Snapshot", type="primary", key="refresh_ai_integrations"):
             store=st.session_state["integration_store"]
             for adapter in build_demo_adapters().values():
-                batch=adapter.fetch()
-                store.ingest(adapter,batch.records)
+                batch=adapter.fetch(); store.ingest(adapter,batch.records)
         store=st.session_state["integration_store"]
         last_ingestions={source:store.latest_event(source) for source in [s.value for s in DEFAULT_SOURCE_CONFIG]}
-        required={s.value for s in DEFAULT_SOURCE_CONFIG}
-        decision=evaluate_ai_freshness(DEFAULT_SOURCE_CONFIG,last_ingestions,required,datetime.now(timezone.utc))
-        if decision.allowed: st.success("🟢 AI READY — required integration data is within configured freshness SLAs.")
-        else: st.error("🔴 AI BLOCKED — required integration data is missing or stale.")
-        c=st.columns(4); c[0].metric("Status",decision.status); c[1].metric("Required Sources",len(required)); c[2].metric("Blocking Sources",len(decision.blocking_sources)); c[3].metric("Approval","Required")
-        st.write(decision.reason)
         rows=[]
-        for source in sorted(required):
-            latest=last_ingestions.get(source)
-            config=next(c for c in DEFAULT_SOURCE_CONFIG.values() if c.source.value==source)
-            rows.append({"Source":source,"Enabled":config.enabled,"Last Successful Ingestion":latest.isoformat() if latest else "No successful ingestion","Freshness SLA (hours)":config.freshness_hours,"AI Gate":"READY" if source not in decision.blocking_sources else "BLOCKED"})
+        workflow_names=[("Maintenance Recommendation","maintenance_recommendation"),("Communication Assistant","communication_assistant"),("Repair Recommendation","repair_recommendation"),("Maintenance Scheduling","maintenance_scheduling"),("Predictive Risk","predictive_risk")]
+        for label,workflow in workflow_names:
+            required=required_sources_for(workflow); decision=evaluate_ai_freshness(DEFAULT_SOURCE_CONFIG,last_ingestions,required,datetime.now(timezone.utc)); policy=policy_for(workflow,decision)
+            rows.append({"AI Workflow":label,"Status":policy.status,"Required Sources":", ".join(sorted(required)) or "None","Blocking Sources":", ".join(policy.message.split(": ",1)[1].rstrip("." ).split(", ")) if not policy.allowed else "","Gate":policy.message})
         st.dataframe(pd.DataFrame(rows),use_container_width=True,hide_index=True)
+        if all(row["Status"] == "READY" for row in rows): st.success("🟢 All integration-dependent AI workflows are READY.")
+        else: st.warning("🔴 One or more AI workflows are BLOCKED until their required source data is refreshed.")
         st.info("Demo mode uses synthetic integration records. No external APIs, credentials, or operational actions are invoked.")
     with tabs[1]:
         st.subheader("Maintenance Knowledge Assistant"); question=st.text_area("Ask a maintenance question",placeholder="What should be checked when a brake fault is reported?"); top_k=st.slider("Evidence documents",1,5,3)
@@ -101,36 +108,49 @@ elif section=="🤖 AI Intelligence":
                     st.warning("Human approval is required before any operational action.")
     with tabs[2]:
         st.subheader("Maintenance Recommendations")
-        if fleet.empty: st.info("No equipment data available.")
+        policy=ai_policy("maintenance_recommendation")
+        if not policy.allowed: st.error(f"🔴 {policy.message}")
         else:
-            eq_col="equipment_id" if "equipment_id" in fleet.columns else fleet.columns[0]; eq=st.selectbox("Equipment",fleet[eq_col].astype(str).tolist(),key="maintenance_equipment"); f=faults[faults[eq_col].astype(str).eq(eq)] if eq_col in faults.columns else faults; p=pm[pm[eq_col].astype(str).eq(eq)] if eq_col in pm.columns else pm; h=history[history[eq_col].astype(str).eq(eq)] if eq_col in history.columns else history; d=requests[requests[eq_col].astype(str).eq(eq)] if eq_col in requests.columns else requests
-            if st.button("Generate Maintenance Recommendation",type="primary",key="maintenance_recommendation"):
-                result=recommend(eq,dataframe_to_text(f),dataframe_to_text(d),dataframe_to_text(pd.concat([p,h],ignore_index=True)),load_chunks(KNOWLEDGE)); c=st.columns(4); c[0].metric("Priority",result.priority); c[1].metric("Evidence",len(result.evidence)); c[2].metric("Approval","Required"); c[3].metric("Equipment",result.equipment_id); st.subheader("Recommendation"); st.write(result.recommendation); st.subheader("Reasons"); [st.write(f"• {x}") for x in result.reasons]; st.subheader("Evidence Sources"); [st.write(f"• {x}") for x in result.evidence]; st.warning("No autonomous action is taken.")
-    with tabs[3]:
-        st.subheader("Communication Assistant"); st.caption("Classify driver communication and prepare a response draft. Nothing is sent automatically."); options=["Manual message"]+(["Driver request"] if not requests.empty else [])+(["Email/message"] if not messages.empty else [])+(["Voicemail"] if not voicemails.empty else []); source=st.selectbox("Input source",options); eq=None; text=""
-        if source=="Manual message": eq=st.text_input("Equipment ID (optional)"); text=st.text_area("Driver message",height=140)
-        else:
-            df=requests if source=="Driver request" else messages if source=="Email/message" else voicemails; idcol="request_id" if "request_id" in df else "message_id" if "message_id" in df else "voicemail_id" if "voicemail_id" in df else df.columns[0]; selected=st.selectbox("Record",df[idcol].astype(str).tolist()); row=df[df[idcol].astype(str).eq(selected)].iloc[0]; eq=str(row.get("equipment_id")) if pd.notna(row.get("equipment_id")) else None; cols=[c for c in df.columns if any(k in c.lower() for k in ["message","text","body","transcript","description","request"])] ; text=" ".join(str(row[c]) for c in cols if pd.notna(row[c])); st.text_area("Source content",text,height=140,disabled=True)
-        if st.button("Analyze Communication",type="primary",key="communication_analysis"):
-            if not text.strip(): st.warning("Provide a communication first.")
+            if fleet.empty: st.info("No equipment data available.")
             else:
-                result=assess(text,load_chunks(KNOWLEDGE),eq); c=st.columns(5); c[0].metric("Category",result.category); c[1].metric("Priority",result.priority); c[2].metric("Safety","YES" if result.safety_related else "NO"); c[3].metric("Compliance","YES" if result.compliance_related else "NO"); c[4].metric("Approval","Required"); st.subheader("Summary"); st.write(result.summary); st.subheader("Draft Response"); st.text_area("Human-editable draft",result.draft_response,height=180); st.subheader("Evidence"); [st.write(f"• {x}") for x in result.evidence] if result.evidence else st.info("No approved evidence retrieved; escalate rather than invent guidance."); st.warning("Draft only — nothing is sent automatically.")
-    with tabs[4]: render_repair_recommendations(faults,history,estimates,repair_notes,KNOWLEDGE)
-    with tabs[5]: render_maintenance_scheduling(pm,availability,locations,KNOWLEDGE)
-    with tabs[6]:
-        st.subheader("Predictive Risk")
-        st.caption("Explainable risk assessment from validated fleet signals. This is a decision-support foundation, not a trained failure-probability model.")
-        if fleet.empty: st.info("No equipment data available.")
+                eq_col="equipment_id" if "equipment_id" in fleet.columns else fleet.columns[0]; eq=st.selectbox("Equipment",fleet[eq_col].astype(str).tolist(),key="maintenance_equipment"); f=faults[faults[eq_col].astype(str).eq(eq)] if eq_col in faults.columns else faults; p=pm[pm[eq_col].astype(str).eq(eq)] if eq_col in pm.columns else pm; h=history[history[eq_col].astype(str).eq(eq)] if eq_col in history.columns else history; d=requests[requests[eq_col].astype(str).eq(eq)] if eq_col in requests.columns else requests
+                if st.button("Generate Maintenance Recommendation",type="primary",key="maintenance_recommendation"):
+                    result=recommend(eq,dataframe_to_text(f),dataframe_to_text(d),dataframe_to_text(pd.concat([p,h],ignore_index=True)),load_chunks(KNOWLEDGE)); c=st.columns(4); c[0].metric("Priority",result.priority); c[1].metric("Evidence",len(result.evidence)); c[2].metric("Approval","Required"); c[3].metric("Equipment",result.equipment_id); st.subheader("Recommendation"); st.write(result.recommendation); st.subheader("Reasons"); [st.write(f"• {x}") for x in result.reasons]; st.subheader("Evidence Sources"); [st.write(f"• {x}") for x in result.evidence]; st.warning("No autonomous action is taken.")
+    with tabs[3]:
+        st.subheader("Communication Assistant"); policy=ai_policy("communication_assistant")
+        if not policy.allowed: st.error(f"🔴 {policy.message}")
         else:
-            eq_col="equipment_id" if "equipment_id" in fleet.columns else fleet.columns[0]
-            equipment_ids=fleet[eq_col].astype(str).tolist(); equipment_id=st.selectbox("Equipment",equipment_ids,key="risk_equipment")
-            def rows_for(df): return df[df[eq_col].astype(str).eq(equipment_id)] if eq_col in df.columns else pd.DataFrame()
-            f=rows_for(faults); h=rows_for(history); w=rows_for(work_orders); a=rows_for(availability); p=rows_for(pm); r=rows_for(requests)
-            def nmatch(df,col,values): return int(df[col].astype(str).str.upper().isin(values).sum()) if col in df else 0
-            critical=nmatch(f,"severity",{"CRITICAL"}); high=nmatch(f,"severity",{"HIGH"}); safety=nmatch(f,"safety_related",{"TRUE","YES","1"}) + nmatch(r,"safety_related",{"TRUE","YES","1"}); open_wo=nmatch(w,"status",{"OPEN","IN_PROGRESS"}); recent_repairs=len(h); unavailable=bool(not a.empty and "status" in a.columns and str(a.iloc[-1]["status"]).upper() != "AVAILABLE"); overdue=nmatch(p,"status",{"OVERDUE"}) > 0
-            c=st.columns(7); c[0].metric("Critical Faults",critical); c[1].metric("High Faults",high); c[2].metric("Safety Events",safety); c[3].metric("Open WOs",open_wo); c[4].metric("Recent Repairs",recent_repairs); c[5].metric("Overdue PM","YES" if overdue else "NO"); c[6].metric("Unavailable","YES" if unavailable else "NO")
-            if st.button("Assess Predictive Risk",type="primary",key="predictive_risk_assess"):
-                result=assess_risk(RiskContext(equipment_id,critical,high,safety,open_wo,overdue,recent_repairs,unavailable),load_chunks(KNOWLEDGE)); c=st.columns(4); c[0].metric("Risk Score",result.score); c[1].metric("Risk Level",result.level); c[2].metric("Evidence",len(result.evidence)); c[3].metric("Approval","Required"); st.subheader("Risk Factors"); [st.write(f"• {x}") for x in result.factors]; st.subheader("Recommended Action"); st.write(result.recommendation); st.subheader("Evidence Sources"); [st.write(f"• {x}") for x in result.evidence] if result.evidence else st.info("No approved evidence retrieved; escalate for human review."); st.warning("Risk assessment is advisory. It does not automatically ground equipment, stop service, authorize repair, or change a schedule.")
+            st.caption("Classify driver communication and prepare a response draft. Nothing is sent automatically."); options=["Manual message"]+(["Driver request"] if not requests.empty else [])+(["Email/message"] if not messages.empty else [])+(["Voicemail"] if not voicemails.empty else []); source=st.selectbox("Input source",options); eq=None; text=""
+            if source=="Manual message": eq=st.text_input("Equipment ID (optional)"); text=st.text_area("Driver message",height=140)
+            else:
+                df=requests if source=="Driver request" else messages if source=="Email/message" else voicemails; idcol="request_id" if "request_id" in df else "message_id" if "message_id" in df else "voicemail_id" if "voicemail_id" in df else df.columns[0]; selected=st.selectbox("Record",df[idcol].astype(str).tolist()); row=df[df[idcol].astype(str).eq(selected)].iloc[0]; eq=str(row.get("equipment_id")) if pd.notna(row.get("equipment_id")) else None; cols=[c for c in df.columns if any(k in c.lower() for k in ["message","text","body","transcript","description","request"])] ; text=" ".join(str(row[c]) for c in cols if pd.notna(row[c])); st.text_area("Source content",text,height=140,disabled=True)
+            if st.button("Analyze Communication",type="primary",key="communication_analysis"):
+                if not text.strip(): st.warning("Provide a communication first.")
+                else:
+                    result=assess(text,load_chunks(KNOWLEDGE),eq); c=st.columns(5); c[0].metric("Category",result.category); c[1].metric("Priority",result.priority); c[2].metric("Safety","YES" if result.safety_related else "NO"); c[3].metric("Compliance","YES" if result.compliance_related else "NO"); c[4].metric("Approval","Required"); st.subheader("Summary"); st.write(result.summary); st.subheader("Draft Response"); st.text_area("Human-editable draft",result.draft_response,height=180); st.subheader("Evidence"); [st.write(f"• {x}") for x in result.evidence] if result.evidence else st.info("No approved evidence retrieved; escalate rather than invent guidance."); st.warning("Draft only — nothing is sent automatically.")
+    with tabs[4]:
+        policy=ai_policy("repair_recommendation")
+        if not policy.allowed: st.error(f"🔴 {policy.message}")
+        else: render_repair_recommendations(faults,history,estimates,repair_notes,KNOWLEDGE)
+    with tabs[5]:
+        policy=ai_policy("maintenance_scheduling")
+        if not policy.allowed: st.error(f"🔴 {policy.message}")
+        else: render_maintenance_scheduling(pm,availability,locations,KNOWLEDGE)
+    with tabs[6]:
+        st.subheader("Predictive Risk"); policy=ai_policy("predictive_risk")
+        if not policy.allowed: st.error(f"🔴 {policy.message}")
+        else:
+            st.caption("Explainable risk assessment from validated fleet signals. This is a decision-support foundation, not a trained failure-probability model.")
+            if fleet.empty: st.info("No equipment data available.")
+            else:
+                eq_col="equipment_id" if "equipment_id" in fleet.columns else fleet.columns[0]; equipment_ids=fleet[eq_col].astype(str).tolist(); equipment_id=st.selectbox("Equipment",equipment_ids,key="risk_equipment")
+                def rows_for(df): return df[df[eq_col].astype(str).eq(equipment_id)] if eq_col in df.columns else pd.DataFrame()
+                f=rows_for(faults); h=rows_for(history); w=rows_for(work_orders); a=rows_for(availability); p=rows_for(pm); r=rows_for(requests)
+                def nmatch(df,col,values): return int(df[col].astype(str).str.upper().isin(values).sum()) if col in df else 0
+                critical=nmatch(f,"severity",{"CRITICAL"}); high=nmatch(f,"severity",{"HIGH"}); safety=nmatch(f,"safety_related",{"TRUE","YES","1"}) + nmatch(r,"safety_related",{"TRUE","YES","1"}); open_wo=nmatch(w,"status",{"OPEN","IN_PROGRESS"}); recent_repairs=len(h); unavailable=bool(not a.empty and "status" in a.columns and str(a.iloc[-1]["status"]).upper() != "AVAILABLE"); overdue=nmatch(p,"status",{"OVERDUE"}) > 0
+                c=st.columns(7); c[0].metric("Critical Faults",critical); c[1].metric("High Faults",high); c[2].metric("Safety Events",safety); c[3].metric("Open WOs",open_wo); c[4].metric("Recent Repairs",recent_repairs); c[5].metric("Overdue PM","YES" if overdue else "NO"); c[6].metric("Unavailable","YES" if unavailable else "NO")
+                if st.button("Assess Predictive Risk",type="primary",key="predictive_risk_assess"):
+                    result=assess_risk(RiskContext(equipment_id,critical,high,safety,open_wo,overdue,recent_repairs,unavailable),load_chunks(KNOWLEDGE)); c=st.columns(4); c[0].metric("Risk Score",result.score); c[1].metric("Risk Level",result.level); c[2].metric("Evidence",len(result.evidence)); c[3].metric("Approval","Required"); st.subheader("Risk Factors"); [st.write(f"• {x}") for x in result.factors]; st.subheader("Recommended Action"); st.write(result.recommendation); st.subheader("Evidence Sources"); [st.write(f"• {x}") for x in result.evidence] if result.evidence else st.info("No approved evidence retrieved; escalate for human review."); st.warning("Risk assessment is advisory. It does not automatically ground equipment, stop service, authorize repair, or change a schedule.")
 else:
     st.header("👤 Human Approval")
     if review_queue.empty: st.success("No review items currently require attention.")

@@ -42,57 +42,98 @@ Phase 1 establishes the trusted data foundation required before introducing AI m
 - Synthetic datasets for development and demonstration
 - Read-only Streamlit business data explorer
 
-### Phase 1 architecture
+## Phase 2 — Operational Data Engineering ✅ COMPLETE
 
-```text
-TMT / OEM / ELD / PFJ / Vendors / Files
-                    │
-                    ▼
-                   RAW
-                    │
-                    ▼
-                VALIDATED
-                    │
-                    ▼
-              STANDARDIZED
-                    │
-                    ▼
-                CANONICAL
-                    │
-                    ▼
-                 CURATED
-                    │
-                    ▼
-          Deterministic Rules
-                    │
-          ┌─────────┼─────────┐
-          ▼         ▼         ▼
-         PM       Fault    Work Orders
-        Queue      Queue      Queue
-                    │
-                    ▼
-             Phase 1 Ready
-                    │
-                    ▼
-             Future AI Layer
-```
+Phase 2 adds the operational inputs needed to understand communications, vendor repair activity, estimates, invoices, repair notes, and human-review requirements.
 
-**AI models are intentionally not part of Phase 1.** The objective is to ensure that downstream AI receives governed, traceable, validated data rather than raw source records.
+### Phase 2 datasets
 
-## Phase 1 Business UI
+- Driver requests
+- Communication messages and participants
+- Voicemail records
+- Vendor estimates and estimate lines
+- Vendor invoices and invoice lines
+- Repair notes
+- Document artifacts
+- Human review tasks
 
-A Streamlit application is available in `streamlit_app.py` for business users to inspect the Phase 1 input data.
+### Phase 2 capabilities
 
-It provides:
+- Communication and driver-request normalization
+- Vendor estimate/invoice reconciliation
+- Invoice variance detection
+- Repair-document data extraction foundation
+- Human review queue generation
+- Data-quality validation and regression tests
+- Streamlit operational-data views
 
-- Fleet and dataset KPIs
-- Interactive dataset explorer
-- Search across input data
-- Missing-cell and column-quality snapshot
-- PM scheduling view
-- Critical/high fault view
-- Aged work-order view
-- Vendor view
+## Phase 3 — Knowledge Foundation & AI Intelligence ✅ COMPLETE
+
+Phase 3 introduces approved maintenance knowledge and grounded AI decision support while preserving human approval for operational actions.
+
+### Phase 3 capabilities
+
+- Approved OEM/company knowledge corpus
+- Retrieval and evidence ranking
+- RAG-based Maintenance Knowledge Assistant
+- Maintenance recommendations
+- Communication classification and response drafting
+- Repair recommendations
+- Maintenance scheduling recommendations
+- Explainable predictive-risk assessment foundation
+- Evidence/source display for AI recommendations
+- Human-approval boundary and safe no-autonomous-action design
+- Free/local Qwen-based AI runtime foundation
+- GitHub Actions CI coverage
+- Streamlit AI Intelligence interface
+
+## Phase 4 — Enterprise Integration Foundation 🚧 IN PROGRESS
+
+Phase 4 connects the platform to the enterprise systems used by fleet maintenance operations. The first objective is **integration contracts and canonical envelopes**, not direct production API credentials.
+
+### Phase 4 integration boundaries
+
+- TMT — work orders, maintenance status, completion information
+- OEM — fault/campaign/service information
+- ELD — vehicle/driver/telemetry events
+- PFJ — service/location transaction information
+- Vendors — estimates, invoices, repair/service updates
+- Notifications — future email/voicemail/operational notifications
+
+### Phase 4 foundation currently implemented
+
+- Common `IntegrationAdapter` contract
+- Canonical `IntegrationRecord` envelope
+- Source-specific identity and record type
+- Equipment-level correlation field
+- Event timestamp normalization
+- Payload isolation from vendor-specific schemas
+- Cursor-aware batch interface
+- Duplicate external-record detection
+- Integration validation result model
+- Synthetic adapters for CI/demo without credentials
+- Automated Phase 4 integration contract tests
+
+### Phase 4 next steps
+
+1. Define source-specific mapping contracts for TMT, OEM, ELD, PFJ, and vendors.
+2. Add configuration-driven connection profiles without storing secrets in the repository.
+3. Build file/API adapters behind the common contract.
+4. Add idempotency and replay handling.
+5. Add ingestion audit records and integration health metrics.
+6. Connect validated integration events to the existing canonical data foundation.
+7. Add safe notification adapters with human approval where required.
+8. Expose integration health and freshness in Streamlit.
+
+**No live enterprise credentials or production API calls are included in Phase 4 foundation work.**
+
+## Business UI
+
+The Streamlit application provides a single business-facing application with separate areas for:
+
+- **Data Foundation** — fleet, PM, faults, work orders, driver requests, vendors, invoices, compliance, and data quality
+- **AI Intelligence** — knowledge assistant, maintenance recommendations, communication assistance, repair recommendations, scheduling, and predictive risk
+- **Human Approval** — review items that require human decisions before operational action
 
 Run locally:
 
@@ -106,29 +147,35 @@ streamlit run streamlit_app.py
 
 Then open `http://localhost:8501`.
 
-## MVP / Future AI Scope
-
-Phase 1 is the data foundation. Future phases will build on it to deliver:
-
-- AI-generated daily maintenance priority queue
-- Driver email/voicemail classification and response assistance
-- Vendor estimate and invoice analysis
-- OEM/company knowledge RAG
-- Maintenance scheduling optimization
-- Predictive maintenance and telemetry analytics
-- Human-in-the-loop workflow automation
-
 ## Architecture
 
 ```text
-External Systems
-  -> Integration Layer
-  -> Event / Data Layer
-  -> Fleet Maintenance Domain
-  -> Rules + AI/ML + RAG
-  -> Workflow Orchestrator
-  -> Human Approval / Safe Automation
-  -> Dashboard / Notifications / TMT
+TMT / OEM / ELD / PFJ / Vendors / Files / Communications
+                         │
+                         ▼
+                Phase 4 Integration Layer
+                         │
+                 Canonical Envelopes
+                         │
+                         ▼
+              Phase 1 Data Foundation
+                         │
+                         ▼
+              Phase 2 Operational Data
+                         │
+                         ▼
+          Phase 3 Knowledge + RAG + AI
+                         │
+              ┌──────────┼──────────┐
+              ▼          ▼          ▼
+          Recommendations Risk   Scheduling
+              │          │          │
+              └──────────┼──────────┘
+                         ▼
+                 Human Approval
+                         │
+                         ▼
+              Safe Operational Action
 ```
 
 See [HLD.md](HLD.md) for the high-level design and [docs/roadmap.md](docs/roadmap.md) for implementation phases.
@@ -139,7 +186,7 @@ AI is the intelligence layer, not the authority layer. Safety-critical, complian
 
 ## Development
 
-The project currently uses Python and synthetic data so the platform can be demonstrated without proprietary TMT, OEM, ELD, or PFJ credentials. Phase 1 has passed automated CI tests.
+The project currently uses Python and synthetic data so the platform can be demonstrated without proprietary TMT, OEM, ELD, or PFJ credentials.
 
 ```bash
 python -m venv .venv
@@ -154,10 +201,10 @@ pytest -q
 | Phase | Status | Scope |
 |---|---|---|
 | Phase 1 | ✅ Complete | Data foundation, quality, validation, curated data, deterministic rules, tests, CI, Streamlit explorer |
-| Phase 2 | ⏳ Planned | Communication/document data foundation and workflow inputs |
-| Phase 3 | ⏳ Planned | OEM/company knowledge and RAG data foundation |
-| Phase 4 | ⏳ Planned | Scheduling and workflow optimization data |
+| Phase 2 | ✅ Complete | Operational communication/vendor data, reconciliation, review queue, quality tests, Streamlit views |
+| Phase 3 | ✅ Complete | Knowledge foundation, RAG, AI recommendations, scheduling, communication, predictive risk, human approval |
+| Phase 4 | 🚧 In Progress | Enterprise integration contracts, canonical envelopes, adapters, idempotency, auditability, integration health |
 | Phase 5 | ⏳ Planned | Predictive maintenance and telemetry data |
 | Phase 6 | ⏳ Planned | Enterprise optimization, feedback, and outcome data |
 
-**Phase 1 is complete and is the baseline for all subsequent phases.**
+**Phase 1, Phase 2, and Phase 3 are complete. Phase 4 has started with the enterprise integration foundation.**

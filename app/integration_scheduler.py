@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from app.integration_config import SourceConfig
-from app.integration_health import HealthRow
 
 
 @dataclass(frozen=True)

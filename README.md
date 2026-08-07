@@ -32,7 +32,109 @@ Safe Operational Action
 Outcome / Feedback
 ```
 
-The Streamlit application includes a **📘 Fleet Maintenance AI Coordinator — Business Guide** page that explains this operating model, PM scheduling use case, AI capabilities, human-approval boundary, and recommended rollout in business-friendly language.
+The Streamlit application includes a **📘 Fleet Maintenance AI Coordinator — Business Guide** page that explains the operating model, business problems, PM scheduling use case, AI capabilities, business impact, maintenance economics, human-approval boundary, and recommended rollout.
+
+## Business Impact & Value Proposition
+
+The business objective is not simply to add an AI chatbot. The objective is to help a maintenance organization move from **reactive coordination and information chasing** toward **proactive, evidence-based maintenance decisions**.
+
+### Why the tool is required
+
+Fleet maintenance information is usually distributed across fleet systems, OEM sources, ELD/telematics, vendors, driver communications, work orders, PM schedules, invoices, and maintenance documents. A coordinator may need to manually connect these signals before deciding what should happen next.
+
+The coordinator addresses recurring operational problems:
+
+- PM work is missed, delayed, or manually chased.
+- Faults compete for attention and may not be triaged consistently.
+- Safety-related driver requests can be buried among routine requests.
+- Coordinators and technicians spend time searching maintenance history and approved knowledge.
+- Vehicle downtime can increase when repair, service-location, parts, and availability information are fragmented.
+- Vendor estimates and invoices can contain variances that require manual comparison.
+- Driver and vendor communication consumes coordinator time.
+- Management may lack one current view of PM compliance, faults, backlog, downtime, data quality, and risk.
+
+### How AI improves the business
+
+| Business area | AI Coordinator assistance | Expected business outcome |
+|---|---|---|
+| PM management | Prioritize due, overdue, and at-risk maintenance | Better PM discipline and fewer avoidable failures |
+| Fault triage | Combine severity, history, equipment context, and safety signals | Faster response and better maintenance prioritization |
+| Downtime | Help coordinate repair priority, service location, and availability | Improve fleet availability and reduce avoidable downtime |
+| Maintenance knowledge | Retrieve approved knowledge and summarize relevant evidence | Less searching and faster decision preparation |
+| Repair support | Use history and approved knowledge to prepare repair options | More consistent repair decisions |
+| Scheduling | Recommend maintenance timing using operational context | Better maintenance capacity and vehicle utilization |
+| Driver communication | Classify requests and draft context-aware responses | Faster communication with human review |
+| Vendor control | Highlight estimate/invoice differences for review | Better cost control and reduced leakage |
+| Risk | Explain which equipment/events deserve attention | Earlier intervention and better risk visibility |
+| Management | Provide one operational picture | Better planning and accountability |
+
+### Maintenance cost: manual vs AI-assisted coordination
+
+The business case should compare the current manual operating model with an AI-assisted model using **actual fleet data**, not an assumed AI savings percentage.
+
+Important cost/value components include:
+
+1. **Coordinator labor** — time spent searching systems, chasing PMs, preparing reports, copying information, and following up with drivers/vendors.
+2. **Breakdown and reactive-repair cost** — parts, labor, towing, emergency service, and other costs associated with preventable or poorly anticipated failures.
+3. **Vehicle downtime** — lost productive utilization while equipment is unavailable for service.
+4. **PM effectiveness** — the financial difference between planned maintenance and avoidable reactive maintenance.
+5. **Vendor leakage** — estimate/invoice variances, duplicate charges, unexpected scope, and missed warranty/recovery opportunities.
+6. **Communication workload** — time spent reading, classifying, routing, and responding to maintenance requests.
+7. **AI/platform cost** — model runtime, hosting, integration, observability, support, and implementation costs.
+
+A simple business-case model is:
+
+```text
+Annual AI-Assisted Value
+    = Coordinator Time Recovered
+    + Avoidable Downtime Value Recovered
+    + Maintenance Cost Avoidance
+    + Vendor Leakage Avoided
+    + Other Measured Operational Benefits
+
+Net Annual Value
+    = Annual AI-Assisted Value - Annual AI/Platform Cost
+
+ROI %
+    = Net Annual Value / Annual AI/Platform Cost × 100
+```
+
+The Streamlit **📘 Business Guide** includes an illustrative calculator for coordinator-time recovery and downtime value. It is intentionally labeled as a planning tool, not a financial forecast. Before a purchase or production rollout, replace the assumptions with finance-approved baseline data.
+
+### What should be measured in a pilot
+
+A practical baseline should include:
+
+- PM compliance rate
+- Preventive vs reactive maintenance ratio
+- Breakdown frequency
+- Average vehicle downtime per event
+- Maintenance cost per vehicle / mile / operating hour, as appropriate
+- Coordinator hours spent on repetitive work
+- Average response time to driver maintenance requests
+- Vendor estimate-to-invoice variance
+- Work-order aging
+- Vehicle availability/utilization
+- Safety/compliance escalations
+- AI recommendation acceptance/rejection rate
+- AI-assisted time saved
+
+This allows the business to prove value from measured outcomes rather than claiming that AI automatically reduces costs.
+
+### AI Coordinator vs manual coordination
+
+| Activity | Mostly manual coordination | AI Coordinator assistance |
+|---|---|---|
+| PM follow-up | Review schedules and chase tasks | Prioritize due/at-risk PM work |
+| Fault investigation | Search several systems | Combine context and summarize evidence |
+| Repair decision support | Search history/manuals | Retrieve approved knowledge and prepare options |
+| Scheduling | Coordinate availability manually | Suggest priority/time/location based on constraints |
+| Driver communication | Read, classify, draft, route | Classify and draft with human approval |
+| Vendor review | Compare documents manually | Highlight estimate/invoice variances |
+| Risk review | Spreadsheet/report driven | Explainable risk prioritization |
+| Management reporting | Manual aggregation | Unified operational view |
+
+The target is **human + AI**, not simply human replacement. The AI handles repetitive analysis and preparation so maintenance professionals can spend more time on exceptions, safety, vendor decisions, field coordination, and operational judgment.
 
 ## Phase 1 — Data Foundation ✅ COMPLETE
 
@@ -149,7 +251,7 @@ Phase 4 connects the platform to the enterprise systems used by fleet maintenanc
 - AI freshness gate
 - Workflow-specific AI readiness policy
 - Streamlit AI Data Readiness experience
-- Business-facing coordinator guidance page
+- Business-facing coordinator guidance page with business impact and cost framework
 
 ### Phase 4 remaining steps
 
@@ -167,7 +269,7 @@ Phase 4 connects the platform to the enterprise systems used by fleet maintenanc
 
 The Streamlit application provides a business-facing experience with:
 
-- **📘 Coordinator Guide** — explains the fleet maintenance coordinator, business problems, PM scheduling, AI capabilities, human approval, and rollout approach
+- **📘 Coordinator Guide** — explains the fleet maintenance coordinator, business problems, PM scheduling, AI capabilities, business impact, manual-vs-AI-assisted cost framework, human approval, KPIs, and rollout approach
 - **📊 Data Foundation** — fleet, PM, faults, work orders, driver requests, vendors, invoices, compliance, and data quality
 - **🤖 AI Intelligence** — knowledge assistant, maintenance recommendations, communication assistance, repair recommendations, scheduling, predictive risk, and AI data readiness
 - **👤 Human Approval** — review items that require human decisions before operational action

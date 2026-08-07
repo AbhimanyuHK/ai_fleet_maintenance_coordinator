@@ -6,6 +6,34 @@ AI-powered Fleet Maintenance Operations Automation Platform.
 
 Reduce preventable breakdowns, improve fleet uptime and safety, reduce maintenance cost leakage, recover warranty value, and reduce manual coordination work.
 
+## What is the AI Fleet Maintenance Coordinator?
+
+The AI Fleet Maintenance Coordinator is a **decision-support layer for fleet maintenance operations**. It brings maintenance information together, checks whether the data is trustworthy and current, identifies what needs attention, retrieves approved maintenance knowledge, and prepares recommendations for the maintenance team.
+
+It is **not an autonomous authority**. Safety-critical, compliance-sensitive, financial, return-to-service, and other consequential decisions remain subject to deterministic controls and required human approval.
+
+The intended business flow is:
+
+```text
+Fleet / Enterprise Sources
+        ↓
+Trusted Data Foundation
+        ↓
+Integration Health + Freshness Gate
+        ↓
+Knowledge + RAG + AI Reasoning
+        ↓
+Recommendations / Risk / Scheduling / Communication
+        ↓
+Human Review & Approval
+        ↓
+Safe Operational Action
+        ↓
+Outcome / Feedback
+```
+
+The Streamlit application includes a **📘 Fleet Maintenance AI Coordinator — Business Guide** page that explains this operating model, PM scheduling use case, AI capabilities, human-approval boundary, and recommended rollout in business-friendly language.
+
 ## Phase 1 — Data Foundation ✅ COMPLETE
 
 Phase 1 establishes the trusted data foundation required before introducing AI models.
@@ -89,7 +117,7 @@ Phase 3 introduces approved maintenance knowledge and grounded AI decision suppo
 
 ## Phase 4 — Enterprise Integration Foundation 🚧 IN PROGRESS
 
-Phase 4 connects the platform to the enterprise systems used by fleet maintenance operations. The first objective is **integration contracts and canonical envelopes**, not direct production API credentials.
+Phase 4 connects the platform to the enterprise systems used by fleet maintenance operations. The first objective is **integration contracts, canonical envelopes, data freshness, and safe orchestration**, not direct production API credentials.
 
 ### Phase 4 integration boundaries
 
@@ -113,27 +141,36 @@ Phase 4 connects the platform to the enterprise systems used by fleet maintenanc
 - Integration validation result model
 - Synthetic adapters for CI/demo without credentials
 - Automated Phase 4 integration contract tests
+- Configuration-driven source profiles
+- Authentication-mode boundary without repository secrets
+- Retry and transient-error orchestration
+- Source freshness SLA scheduling
+- Integration health and audit foundations
+- AI freshness gate
+- Workflow-specific AI readiness policy
+- Streamlit AI Data Readiness experience
+- Business-facing coordinator guidance page
 
-### Phase 4 next steps
+### Phase 4 remaining steps
 
-1. Define source-specific mapping contracts for TMT, OEM, ELD, PFJ, and vendors.
-2. Add configuration-driven connection profiles without storing secrets in the repository.
-3. Build file/API adapters behind the common contract.
-4. Add idempotency and replay handling.
-5. Add ingestion audit records and integration health metrics.
-6. Connect validated integration events to the existing canonical data foundation.
-7. Add safe notification adapters with human approval where required.
-8. Expose integration health and freshness in Streamlit.
+1. Harden source-specific mapping contracts for TMT, OEM, ELD, PFJ, and vendors.
+2. Build file/API adapters behind the common contract.
+3. Add production secret references and deployment configuration without storing secrets in the repository.
+4. Add durable scheduling and replay handling for real ingestion jobs.
+5. Connect validated integration events to the canonical data foundation in production environments.
+6. Add safe notification adapters with human approval where required.
+7. Validate integration health, freshness, and AI readiness against real enterprise SLAs.
 
-**No live enterprise credentials or production API calls are included in Phase 4 foundation work.**
+**No live enterprise credentials or production API calls are included in the Phase 4 foundation work.**
 
 ## Business UI
 
-The Streamlit application provides a single business-facing application with separate areas for:
+The Streamlit application provides a business-facing experience with:
 
-- **Data Foundation** — fleet, PM, faults, work orders, driver requests, vendors, invoices, compliance, and data quality
-- **AI Intelligence** — knowledge assistant, maintenance recommendations, communication assistance, repair recommendations, scheduling, and predictive risk
-- **Human Approval** — review items that require human decisions before operational action
+- **📘 Coordinator Guide** — explains the fleet maintenance coordinator, business problems, PM scheduling, AI capabilities, human approval, and rollout approach
+- **📊 Data Foundation** — fleet, PM, faults, work orders, driver requests, vendors, invoices, compliance, and data quality
+- **🤖 AI Intelligence** — knowledge assistant, maintenance recommendations, communication assistance, repair recommendations, scheduling, predictive risk, and AI data readiness
+- **👤 Human Approval** — review items that require human decisions before operational action
 
 Run locally:
 
@@ -155,7 +192,7 @@ TMT / OEM / ELD / PFJ / Vendors / Files / Communications
                          ▼
                 Phase 4 Integration Layer
                          │
-                 Canonical Envelopes
+            Canonical Envelopes + Health
                          │
                          ▼
               Phase 1 Data Foundation
@@ -165,6 +202,8 @@ TMT / OEM / ELD / PFJ / Vendors / Files / Communications
                          │
                          ▼
           Phase 3 Knowledge + RAG + AI
+                         │
+                  Freshness Gate
                          │
               ┌──────────┼──────────┐
               ▼          ▼          ▼
@@ -176,6 +215,9 @@ TMT / OEM / ELD / PFJ / Vendors / Files / Communications
                          │
                          ▼
               Safe Operational Action
+                         │
+                         ▼
+                   Outcomes / Feedback
 ```
 
 See [HLD.md](HLD.md) for the high-level design and [docs/roadmap.md](docs/roadmap.md) for implementation phases.
@@ -203,8 +245,8 @@ pytest -q
 | Phase 1 | ✅ Complete | Data foundation, quality, validation, curated data, deterministic rules, tests, CI, Streamlit explorer |
 | Phase 2 | ✅ Complete | Operational communication/vendor data, reconciliation, review queue, quality tests, Streamlit views |
 | Phase 3 | ✅ Complete | Knowledge foundation, RAG, AI recommendations, scheduling, communication, predictive risk, human approval |
-| Phase 4 | 🚧 In Progress | Enterprise integration contracts, canonical envelopes, adapters, idempotency, auditability, integration health |
+| Phase 4 | 🚧 In Progress | Enterprise integration contracts, configuration, orchestration, freshness/SLA, health, AI readiness, business guidance |
 | Phase 5 | ⏳ Planned | Predictive maintenance and telemetry data |
 | Phase 6 | ⏳ Planned | Enterprise optimization, feedback, and outcome data |
 
-**Phase 1, Phase 2, and Phase 3 are complete. Phase 4 has started with the enterprise integration foundation.**
+**Phase 1, Phase 2, and Phase 3 are complete. Phase 4 is progressing through the enterprise integration foundation and AI-readiness boundary.**
